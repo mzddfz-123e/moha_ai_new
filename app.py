@@ -65,6 +65,7 @@ else:
     card_bg = "linear-gradient(135deg, #e9d5ff 0%, #d8b4fe 50%, #c084fc 100%)"
     card_text = "#3b0764"
     border_col = "#a855f7"
+    input_bg = "#ffffff"
 
 st.markdown(f"""
     <style>
