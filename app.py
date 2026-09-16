@@ -24,7 +24,7 @@ st.markdown("""
         color: #000000 !important;
     }
     
-    /* تعديل البانر العلوي: بنفسجي هافت (فاتح) والقلبين بنفسجي داكن */
+    /* البانر العلوي: بنفسجي هافت والقلبين بنفسجي داكن */
     .designer-card {
         background: linear-gradient(135deg, #e9d5ff 0%, #d8b4fe 50%, #c084fc 100%);
         color: #3b0764 !important; padding: 18px; border-radius: 18px;
@@ -117,18 +117,21 @@ if text_input:
             q_lower = prompt_text.lower()
             answer = ""
             
-            # الطلبات الخاصة بدقة تامة
-            if any(w in q_lower for w in ["من مصممك", "مين مصممك", "من صانعك", "مين صانعك", "من مطورك", "مين مطورك"]):
-                answer = "تم تصميمي وتطويري بكل فخر واعتزاز بواسطة العبقري **محمد علاء بن زايد**! 💜"
+            # بنك الكلمات الطيبة والمتنوعة بدون تكرار
+            kind_words = [
+                "يا أسطورة البرمجة ويا فخر المطورين، الله يوفقك ويحفظك دائماً!",
+                "عقليتك الفذة وإبداعك المستمر هما سر تميز هذا التطبيق وروعته!",
+                "إنسان مبدع بمعرفة وعمل نادر، دايماً سابقه بخطوات يا مبدع!",
+                "تركت بصمة ذكية وعظيمة في عالم التقنية، دمت لنا فخراً ونجاحاً!",
+                "وجودك وإبداعك هما اللذان يمنحان الحياة لكل سطر برمجي هنا!"
+            ]
+            selected_kind_word = random.choice(kind_words)
+
+            # الأسئلة المتعلقة بالمصمم، الصانع، التاريخ، أو الإنشاء
+            if any(w in q_lower for w in ["من مصممك", "مين مصممك", "من صانعك", "مين صانعك", "من مطورك", "مين مطورك", "صممك", "صنعك", "تاريخك", "انشائك", "أنشأك", "من انشأك", "من صنع هذا", "من صنعك"]):
+                answer = f"تم تصميمي وتطويري بواسطة العبقري **محمد علاء بن زايد** 💜. {selected_kind_word}"
             elif any(w in q_lower for w in ["كلمة حلوة لمصممك", "قول كلمة حلوة لمصممك", "كلمة لمصممك", "قول كلمة لمصممك", "كلمة حلوة لمطورك", "قول كلمة حلوة لمطورك", "مدحة لمصممك"]):
-                compliments = [
-                    "يا محمد علاء يا فنان يا مبدع، إبداعك هذا ما يطلع إلا من عقل عبقري فذ يسبق عصره بخطوات! فخور جداً بكوني من إبداعك 💜",
-                    "إلى صانعي العبقري محمد علاء بن زايد: أنت شخص خارق للذات وعقلية برمجية نادرة، تركت بصمة لا تمحى في عالم الذكاء الاصطناعي! 🚀",
-                    "إلى المطور الأسطوري محمد علاء: أنت لست مجرد مبرمج، بل فنان ترسم المستقبل بالأكواد والذكاء والإبداع الخالص! استمر في إبهار العالم 🌟",
-                    "يا محمد علاء، كل سطر كود هنا ينطق بعبقريتك! أنت فخر للبرمجة والمطورين العرب 👑",
-                    "إلى صانعي ومطوري الحبيب محمد علاء بن زايد: ذكاؤك الفطري وشغفك بالتقنية هما السر وراء عظمة هذا التطبيق وأناقتك الدائمة! ⚡"
-                ]
-                answer = random.choice(compliments)
+                answer = f"إلى صانعي الحبيب **محمد علاء بن زايد**: {selected_kind_word} 💜"
             else:
                 system_instruction = "You are Moha AI, created by Mohamed Alaa. The user is writing in Arabic, so you MUST reply ONLY in Arabic unless the user explicitly asks you to translate a text into another language."
                 full_query = f"{system_instruction}\nUser: {prompt_text}"
@@ -147,18 +150,23 @@ if text_input:
         st.markdown(answer)
         st.session_state.messages.append({"role": "assistant", "content": answer})
 
-        # --- نظام الصوت الخفيف والمستمر ---
+        # --- نظام الصوت الخفيف (مع تنظيف النص تماماً من الإيموجي والرموز كي لا ينطقها) ---
         if enable_audio_reply and answer:
             pitch_val = "0.8" if "الصوت الثاني" in voice_choice else "1.05"
             rate_val = "1.1" if "الصوت الثاني" in voice_choice else "1.15"
+            
+            # دالة تنظيف النص لإزالة الرموز التعبيرية والإيموجي تماماً من الصوت
+            import re
             clean_text = answer.replace("'", "").replace("\n", " ").replace("*", "").replace('"', '').replace("`", "")
+            # إزالة الإيموجي والرموز التعبيرية من النص المنطوق
+            clean_text = re.sub(r'[\U00010000-\U0010ffff]|[\u2600-\u27bf]|[\U0001f300-\U0001f6ff]|[\U0001f900-\U0001f9ff]|💜', '', clean_text)
             
             tts_script = f"""
             <script>
             (function() {{
                 if ('speechSynthesis' in window) {{
                     window.speechSynthesis.cancel();
-                    var textToSpeak = "{clean_text}";
+                    var textToSpeak = "{clean_text.strip()}";
                     var utterance = new SpeechSynthesisUtterance(textToSpeak);
                     utterance.lang = /[a-zA-Z]/.test(textToSpeak) && ('{prompt_text}'.toLowerCase().includes('ترجم') || '{prompt_text}'.toLowerCase().includes('translate')) ? 'en-US' : 'ar-SA';
                     utterance.rate = {rate_val};
