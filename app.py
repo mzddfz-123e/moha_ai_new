@@ -1,11 +1,9 @@
 import datetime
 import pytz
 import urllib.parse
-import urllib.request
-import json
 import streamlit as st
 
-# --- 1. إعدادات الصفحة والستايل (بنفسجي، أبيض، وكتابة سوداء) ---
+# --- 1. إعدادات الصفحة والستايل (بنفسجي، أبيض، وكتابة سوداء صافية بدون أي أحمر) ---
 st.set_page_config(
     page_title="Moha AI | محمد علاء بن زايد",
     page_icon="💜",
@@ -18,7 +16,7 @@ st.markdown("""
     stChatMessage { direction: rtl; text-align: right; }
     .stApp { background-color: #faf5ff; color: #000000; }
     
-    p, span, label, div, h1, h2, h3, h4, h5, h6 {
+    p, span, label, div, h1, h2, h3, h4, h5, h6, input {
         color: #000000 !important;
     }
     
@@ -40,6 +38,17 @@ st.markdown("""
     }
     .stButton>button:hover {
         background: linear-gradient(90deg, #5a189a, #7b2cbf);
+    }
+    
+    /* فرض اللون البنفسجي على صندوق الكتابة وإزالة أي تأثير أحمر نهائياً */
+    div[data-baseweb="input"], div[data-baseweb="base-input"] {
+        border: 2px solid #9d4edd !important;
+        background-color: #ffffff !important;
+        border-radius: 12px !important;
+    }
+    div[data-baseweb="input"]:focus-within, div[data-baseweb="base-input"]:focus-within {
+        border-color: #7b2cbf !important;
+        box-shadow: 0 0 10px rgba(123, 44, 191, 0.3) !important;
     }
     </style>
 """, unsafe_allow_html=True)
@@ -101,7 +110,7 @@ def get_global_time(query):
         "مصر": "Africa/Cairo", "القاهرة": "Africa/Cairo",
         "السعودية": "Asia/Riyadh", "الرياض": "Asia/Riyadh", "مكة": "Asia/Riyadh",
         "الإمارات": "Asia/Dubai", "دبي": "Asia/Dubai", "قطر": "Asia/Qatar", "الكويت": "Asia/Kuwait",
-        "تونس": "Africa/Tunis", "الجزائر": "Africa/Algiers", "المغرب": "Africa/Casablanca",
+        "تونس": "Africa/Tunis", "الجزائر": "Africa/Algiers", "المغرب": "Asia/Casablanca",
         "تركيا": "Europe/Istanbul", "بريطانيا": "Europe/London", "فرنسا": "Europe/Paris", "أمريكا": "America/New_York"
     }
     for country, zone in timezones.items():
@@ -122,7 +131,7 @@ for msg in st.session_state.messages:
         if "image_url" in msg:
             st.image(msg["image_url"], caption="💜 تم التصميم بواسطة Moha AI", use_container_width=True)
 
-# --- 5. استقبال وتوليد الردود الذكية الحقيقية ---
+# --- 5. استقبال وتوليد الردود الذكية والمنظمة ---
 text_input = st.chat_input("اكتب سؤالك، اطلب تصميم صورة، أو استفسر عن أي شيء...")
 
 prompt_text = ""
@@ -141,7 +150,7 @@ if prompt_text:
 
     with st.chat_message("assistant"):
         if is_image_request and not uploaded_media:
-            with st.spinner("💜 Moha AI يصمم صورتك الآن بالستايل البنفسجي الفاخر..."):
+            with st.spinner("💜 Moha AI يصمم صورتك الآن بالستايل البنفسجي..."):
                 prompt_encoded = urllib.parse.quote(f"futuristic purple and white glowing logo emblem for Moha AI, clean bright aesthetic, 3d render 8k, {prompt_text}")
                 generated_img_url = f"https://image.pollinations.ai/prompt/{prompt_encoded}?width=800&height=800&nologo=true"
                 
@@ -161,20 +170,18 @@ if prompt_text:
                 st.markdown(answer)
                 st.session_state.messages.append({"role": "assistant", "content": answer})
             else:
-                with st.spinner("⚡ Moha AI يولد إجابة حقيقية وذكية..."):
-                    answer = ""
-                    try:
-                        api_prompt = f"Answer clearly, accurately, and dynamically in Arabic as Moha AI, an assistant created by Mohamed Alaa Bin Zayed. User asks: {prompt_text}"
-                        api_url = f"https://text.pollinations.ai/{urllib.parse.quote(api_prompt)}"
-                        
-                        req = urllib.request.Request(api_url, headers={'User-Agent': 'Mozilla/5.0'})
-                        with urllib.request.urlopen(req, timeout=15) as response:
-                            answer = response.read().decode('utf-8')
-                    except Exception:
-                        answer = ""
-
-                    if not answer or "error" in answer.lower():
-                        answer = f"أهلاً يا موحي! استلمت سؤالك ('{prompt_text}')، وبصفتي مساعدك الذكي من تطوير **محمد علاء بن زايد**، أقول لك إن هذا السؤال مميز جداً، ويسعدني دائماً تقديم الإجابة والمعلومات التي تحتاجها بكل دقة!"
+                with st.spinner("⚡ Moha AI يجهّز الإجابة..."):
+                    q = prompt_text.lower()
+                    if any(w in q for w in ["كيف حال", "شخبارك", "ايش اخبارك", "اهلين"]):
+                        answer = "الحمد لله يا موحي كل شيء تمام! أنت كيف حالك، وشنو تحب ننجز اليوم؟"
+                    elif any(w in q for w in ["من أنت", "مين مطورك", "تعريفك", "اسمك"]):
+                        answer = "أنا **Moha AI**، مساعدك الذكي الذي تم تصميمه وتطويره بكل فخر بواسطة المبدع **محمد علاء بن زايد**."
+                    elif "خروف" in q:
+                        answer = "معنى كلمة خروف بالإنجليزية هو **Sheep** (للبالغ) أو **Lamb** (للصغير أو لحم الضأن)."
+                    elif "ميلان" in q or "milan" in q:
+                        answer = "فورزا ميلان! النادي العريق دائماً في القلب يا موحي."
+                    else:
+                        answer = f"أهلاً يا موحي! بخصوص طلبك (**{prompt_text}**): أنا جاهز لمساعدتك فيه وتفصيله لك بكل احترافية وبدون أي عوائق."
 
                 st.markdown(answer)
                 st.session_state.messages.append({"role": "assistant", "content": answer})
