@@ -13,7 +13,7 @@ st.set_page_config(
     layout="centered"
 )
 
-# --- 2. القائمة الجانبية (Sidebar) بعد إزالة الـ Dark/Light ---
+# --- 2. القائمة الجانبية (Sidebar) ---
 with st.sidebar:
     st.header("⚙️ إعدادات الصوت")
     voice_choice = st.selectbox("🗣️ اختر الصوت:", ("🔊 الصوت الأول (خفيف)", "🔊 الصوت الثاني (عميق)"))
@@ -46,15 +46,29 @@ with st.sidebar:
         st.session_state.messages = []
         st.rerun()
 
-# --- 3. التصميم الداكن الفخم والكتابة البيضاء بالكامل ---
+# --- 3. التصميم: خلفية بيضاء، خط المستخدم أحمر، وخط البوت أصفر ---
 st.markdown("""
     <style>
     .main { direction: rtl; text-align: right; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
     stChatMessage { direction: rtl; text-align: right; }
-    .stApp { background-color: #121212 !important; color: #ffffff !important; }
     
-    p, span, label, div, h1, h2, h3, h4, h5, h6, input, .stMarkdown, .stText, .stChatInput textarea {
-        color: #ffffff !important;
+    /* خلفية الموقع بيضاء */
+    .stApp { background-color: #ffffff !important; color: #000000 !important; }
+    
+    /* كتابة المستخدم باللون الأحمر */
+    div[data-testid="stChatMessage"]:nth-child(odd) p, 
+    div[data-testid="stChatMessage"]:nth-child(odd) span,
+    div[data-testid="stChatMessage"]:nth-child(odd) div {
+        color: #d32f2f !important;
+        font-weight: bold;
+    }
+    
+    /* كتابة البوت باللون الأصفر */
+    div[data-testid="stChatMessage"]:nth-child(even) p, 
+    div[data-testid="stChatMessage"]:nth-child(even) span,
+    div[data-testid="stChatMessage"]:nth-child(even) div {
+        color: #f57c00 !important;
+        font-weight: bold;
     }
     
     .designer-card {
@@ -77,12 +91,8 @@ st.markdown("""
     
     div[data-baseweb="input"], div[data-baseweb="base-input"] {
         border: 2px solid #7c3aed !important;
-        background-color: #1e1e1e !important;
+        background-color: #f9f9f9 !important;
         border-radius: 12px !important;
-    }
-    div[data-baseweb="input"]:focus-within, div[data-baseweb="base-input"]:focus-within {
-        border-color: #9d4edd !important;
-        box-shadow: 0 0 10px rgba(123, 44, 191, 0.4) !important;
     }
     </style>
 """, unsafe_allow_html=True)
@@ -199,10 +209,10 @@ if text_input:
                     country_name = "المغرب"
                 elif any(c in q_lower for c in ["لندن", "بريطانيا"]):
                     target_tz = pytz.timezone('Europe/London')
-                    country_name = "بريطانيا"
+                    country_name = "لندن"
                 elif any(c in q_lower for c in ["امريكا", "نيويورك"]):
                     target_tz = pytz.timezone('America/New_York')
-                    country_name = "أمريكا"
+                    country_name = "نيويورك"
 
                 try:
                     t_now = datetime.datetime.now(target_tz)
