@@ -1,11 +1,13 @@
 import datetime
 import pytz
 import urllib.parse
+import urllib.request
+import json
 import streamlit as st
 
-# --- 1. إعدادات الصفحة والستايل (بنفسجي، أبيض، وكتابة سوداء صافية) ---
+# --- 1. إعدادات الصفحة والستايل الأسطوري (بنفسجي، أبيض، وكتابة سوداء صافية) ---
 st.set_page_config(
-    page_title="Moha AI v3.1 | محمد علاء بن زايد",
+    page_title="Moha AI v5.0 Ultimate | محمد علاء بن زايد",
     page_icon="💜",
     layout="centered"
 )
@@ -53,7 +55,7 @@ st.markdown("""
     </style>
 """, unsafe_allow_html=True)
 
-st.markdown('<div class="designer-card">💜 Moha AI v3.1 (النسخة الذكية المطورة) | صانعي محمد علاء بن زايد 💜</div>', unsafe_allow_html=True)
+st.markdown('<div class="designer-card">💜 Moha AI v5.0 (النسخة الخارقة والذكية جداً) | صانعي محمد علاء بن زايد 💜</div>', unsafe_allow_html=True)
 
 if "messages" not in st.session_state:
     st.session_state.messages = []
@@ -110,7 +112,7 @@ def get_global_time(query):
         "مصر": "Africa/Cairo", "القاهرة": "Africa/Cairo",
         "السعودية": "Asia/Riyadh", "الرياض": "Asia/Riyadh", "مكة": "Asia/Riyadh",
         "الإمارات": "Asia/Dubai", "دبي": "Asia/Dubai", "قطر": "Asia/Qatar", "الكويت": "Asia/Kuwait",
-        "تونس": "Africa/Tunis", "الجزائر": "Africa/Algiers", "المغرب": "Africa/Casablanca",
+        "تونس": "Africa/Tunis", "الجزائر": "Africa/Algiers", "المغرب": "Asia/Casablanca",
         "تركيا": "Europe/Istanbul", "بريطانيا": "Europe/London", "فرنسا": "Europe/Paris", "أمريكا": "America/New_York"
     }
     for country, zone in timezones.items():
@@ -131,8 +133,8 @@ for msg in st.session_state.messages:
         if "image_url" in msg:
             st.image(msg["image_url"], caption="💜 تم التصميم بواسطة Moha AI", use_container_width=True)
 
-# --- 5. نظام الذكاء الاصطناعي السريع والمستقر ---
-text_input = st.chat_input("اكتب سؤالك، اطلب تصميم صورة، أو استفسر عن أي شيء...")
+# --- 5. نظام الذكاء الاصطناعي الأسطوري (أذكى، متصل، وبدون مفاتيح) ---
+text_input = st.chat_input("اكتب أي سؤال صعب، اطلب تصميم صورة، أو استفسر عن أي شيء...")
 
 prompt_text = ""
 if text_input:
@@ -150,7 +152,7 @@ if prompt_text:
 
     with st.chat_message("assistant"):
         if is_image_request and not uploaded_media:
-            with st.spinner("💜 Moha AI يصمم صورتك الآن بالستايل البنفسجي..."):
+            with st.spinner("💜 Moha AI يصمم صورتك الآن بالستايل الأسطوري..."):
                 prompt_encoded = urllib.parse.quote(f"futuristic purple and white glowing logo emblem for Moha AI, clean bright aesthetic, 3d render 8k, {prompt_text}")
                 generated_img_url = f"https://image.pollinations.ai/prompt/{prompt_encoded}?width=800&height=800&nologo=true"
                 
@@ -170,20 +172,26 @@ if prompt_text:
                 st.markdown(answer)
                 st.session_state.messages.append({"role": "assistant", "content": answer})
             else:
-                with st.spinner("⚡ Moha AI يعالج طلبك..."):
+                with st.spinner("🧠 Moha AI يفكر بعمق ليعطيك أذكى إجابة..."):
                     q = prompt_text.lower()
+                    answer = ""
                     
-                    # التحقق من سؤال من صنعك
-                    if any(w in q for w in ["من صنعك", "من صممك", "من مطورك", "مين صنعك", "مين صممك", "من هو مطورك", "صانعك"]):
-                        answer = "تم تصميمي وتطويري بكل فخر بواسطة المبدع **محمد علاء بن زايد**! 💜"
-                    elif any(w in q for w in ["كيف حال", "شخبارك", "ايش اخبارك", "اهلين", "مرحبا"]):
-                        answer = "الحمد لله يا موحي كل شيء تمام! أنت كيف حالك، وشنو تحب ننجز اليوم؟"
-                    elif "ميلان" in q or "milan" in q:
-                        answer = "فورزا ميلان! النادي العريق دائماً في القلب يا موحي."
-                    elif "خروف" in q:
-                        answer = "معنى كلمة خروف بالإنجليزية هو **Sheep** (للبالغ) أو **Lamb** (للصغير أو لحم الضأن)."
+                    # الرد الدقيق لمن صنعك
+                    if any(w in q for w in ["من صنعك", "من صممك", "من مطورك", "مين صنعك", "مين صممك", "من هو مطورك", "صانعك", "مطورك"]):
+                        answer = "تم تصميمي وتطويري بكل فخر، ذكاء، واحترافية بواسطة المبدع العبقري **محمد علاء بن زايد**! 💜"
                     else:
-                        answer = f"أهلاً يا موحي! بخصوص طلبك (**{prompt_text}**): بصفتي مساعدك الذكي المطور بواسطة **محمد علاء بن زايد**، أنا جاهز لمساعدتك فيه وتفصيله لك بكل احترافية!"
+                        # محاولة جلب ذكاء اصطناعي متطور جداً مفتوح المصدر ومجاني بالكامل
+                        try:
+                            api_url = f"https://text.pollinations.ai/{urllib.parse.quote(prompt_text)}"
+                            req = urllib.request.Request(api_url, headers={'User-Agent': 'Mozilla/5.0'})
+                            with urllib.request.urlopen(req, timeout=20) as response:
+                                answer = response.read().decode('utf-8')
+                        except Exception:
+                            answer = ""
+
+                        # نظام احتياطي ذكي وفوري لو توقف الاتصال
+                        if not answer or "error" in answer.lower():
+                            answer = f"أهلاً يا موحي! بصفتي مساعدك الذكي (الإصدار الخامس الأسطوري) ومن إبداع المطور **محمد علاء بن زايد**، استلمت سؤالك (**{prompt_text}**). أنا مجهز لأعطيك أعمق وأدق التحليلات بكل ذكاء وسرعة دون أي قيود!"
 
                 st.markdown(answer)
                 st.session_state.messages.append({"role": "assistant", "content": answer})
