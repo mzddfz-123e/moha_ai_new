@@ -9,7 +9,7 @@ import streamlit as st
 # --- 1. إعدادات الصفحة ---
 st.set_page_config(
     page_title="Moha AI | محمد علاء بن زايد",
-    page_icon="💜",
+    page_icon="❤️",
     layout="centered"
 )
 
@@ -46,7 +46,7 @@ with st.sidebar:
         st.session_state.messages = []
         st.rerun()
 
-# --- 3. التصميم: خلفية بيضاء، خط المستخدم أحمر، وخط البوت أصفر ---
+# --- 3. التصميم المخصص: خلفية بيضاء، خط المستخدم أحمر (بما فيه خانة الكتابة)، وخط البوت أصفر، والستايل أحمر وأصفر ---
 st.markdown("""
     <style>
     .main { direction: rtl; text-align: right; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
@@ -55,49 +55,57 @@ st.markdown("""
     /* خلفية الموقع بيضاء */
     .stApp { background-color: #ffffff !important; color: #000000 !important; }
     
-    /* كتابة المستخدم باللون الأحمر */
+    /* كتابة المستخدم (في الشات) باللون الأحمر الواضح */
     div[data-testid="stChatMessage"]:nth-child(odd) p, 
     div[data-testid="stChatMessage"]:nth-child(odd) span,
     div[data-testid="stChatMessage"]:nth-child(odd) div {
-        color: #d32f2f !important;
+        color: #e53935 !important;
         font-weight: bold;
     }
     
-    /* كتابة البوت باللون الأصفر */
+    /* كتابة البوت (في الشات) باللون الأصفر الجذاب */
     div[data-testid="stChatMessage"]:nth-child(even) p, 
     div[data-testid="stChatMessage"]:nth-child(even) span,
     div[data-testid="stChatMessage"]:nth-child(even) div {
-        color: #f57c00 !important;
+        color: #fbc02d !important;
         font-weight: bold;
     }
     
+    /* خانة الكتابة بالأسفل: الخط فيها يكون أحمر واضح أثناء الكتابة */
+    .stChatInput textarea {
+        color: #e53935 !important;
+        font-weight: bold;
+    }
+    
+    /* الـ Banner العلوي بستايل أحمر وأصفر فخم */
     .designer-card {
-        background: linear-gradient(135deg, #2d1b4e 0%, #3b0764 50%, #4c1d95 100%);
-        color: #f3e8ff !important; padding: 18px; border-radius: 18px;
+        background: linear-gradient(135deg, #b71c1c 0%, #d32f2f 50%, #fbc02d 100%);
+        color: #ffffff !important; padding: 18px; border-radius: 18px;
         text-align: center; font-size: 20px; font-weight: bold;
-        box-shadow: 0 4px 15px rgba(123, 44, 191, 0.25); margin-bottom: 20px;
-        border: 2px solid #7c3aed;
+        box-shadow: 0 4px 15px rgba(211, 47, 47, 0.3); margin-bottom: 20px;
+        border: 2px solid #fbc02d;
     }
     
     .designer-card *, .designer-card span, .designer-card div {
-        color: #f3e8ff !important;
+        color: #ffffff !important;
     }
     
+    /* الأزرار بستايل متناسق أحمر وأصفر */
     .stButton>button {
         width: 100%; border-radius: 12px;
-        background: linear-gradient(90deg, #7b2cbf, #9d4edd);
+        background: linear-gradient(90deg, #d32f2f, #fbc02d);
         color: #ffffff !important; font-size: 15px; font-weight: bold; border: none; padding: 10px;
     }
     
     div[data-baseweb="input"], div[data-baseweb="base-input"] {
-        border: 2px solid #7c3aed !important;
-        background-color: #f9f9f9 !important;
+        border: 2px solid #d32f2f !important;
+        background-color: #fff9f9 !important;
         border-radius: 12px !important;
     }
     </style>
 """, unsafe_allow_html=True)
 
-st.markdown(f'<div class="designer-card"><span>💜</span> صانعي هو محمد علاء بن زايد <span>💜</span></div>', unsafe_allow_html=True)
+st.markdown(f'<div class="designer-card"><span>❤️</span> صانعي هو محمد علاء بن زايد <span>💛</span></div>', unsafe_allow_html=True)
 
 if "messages" not in st.session_state:
     st.session_state.messages = []
@@ -127,7 +135,7 @@ for idx, msg in enumerate(st.session_state.messages):
             unique_id = f"audio_btn_{idx}"
             voice_script = f"""
             <div style="margin-top: 8px;">
-                <button id="{unique_id}" style="background:linear-gradient(90deg, #7b2cbf, #9d4edd); color:white; border:none; padding:8px 16px; border-radius:10px; font-size:13px; cursor:pointer; font-weight:bold; box-shadow: 0 2px 5px rgba(0,0,0,0.3);">
+                <button id="{unique_id}" style="background:linear-gradient(90deg, #d32f2f, #fbc02d); color:white; border:none; padding:8px 16px; border-radius:10px; font-size:13px; cursor:pointer; font-weight:bold; box-shadow: 0 2px 5px rgba(0,0,0,0.2);">
                     🔊 استماع للصوت بالهاتف
                 </button>
                 <script>
