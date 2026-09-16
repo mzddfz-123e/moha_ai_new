@@ -13,14 +13,14 @@ st.set_page_config(
     layout="centered"
 )
 
-# --- 2. القائمة الجانبية (Sidebar) لإدارة الوضع والتفضيلات أولاً ---
+# --- 2. القائمة الجانبية (Sidebar) ---
 with st.sidebar:
     st.header("🎨 مظهر التطبيق")
     theme_mode = st.radio("اختر الوضع:", ["وضع هافت (فاتح)", "وضع داكن (Dark)"], index=0)
     
     st.write("---")
     st.header("⚙️ إعدادات الصوت")
-    enable_audio_reply = st.toggle("🔊 تفعيل الرد الصوتي المستمر", value=False)
+    enable_audio_reply = st.toggle("🔊 تفعيل الرد الصوتي التلقائي", value=False)
     voice_choice = st.selectbox("🗣️ اختر الصوت:", ("🔊 الصوت الأول (خفيف)", "🔊 الصوت الثاني (عميق)"))
     
     st.write("---")
@@ -51,7 +51,7 @@ with st.sidebar:
         st.session_state.messages = []
         st.rerun()
 
-# --- 3. تطبيق الألوان ديناميكياً حسب اختيارك (داكن أو هافت) ---
+# --- 3. تصميم الألوان ---
 if theme_mode == "وضع داكن (Dark)":
     bg_color = "#121212"
     text_color = "#ffffff"
@@ -115,12 +115,31 @@ if "messages" not in st.session_state:
 if "saved_chats" not in st.session_state:
     st.session_state.saved_chats = {}
 
-# --- 4. عرض رسائل المحادثة ---
-for msg in st.session_state.messages:
+# --- 4. عرض المحادثة مع زر نطق لكل رسالة (حل مشكلة الهاتف) ---
+for idx, msg in enumerate(st.session_state.messages):
     with st.chat_message(msg["role"]):
         st.markdown(msg["content"])
+        # إذا كانت الرسالة من المساعد، نضيف زر صوت يدوي يضمن الاشتغال في التلفون
+        if msg["role"] == "assistant":
+            clean_for_btn = msg["content"].replace("'", "").replace('"', '').replace('\n', ' ')
+            voice_script = f"""
+            <div style="margin-top: 5px;">
+                <button onclick="
+                    if ('speechSynthesis' in window) {{
+                        window.speechSynthesis.cancel();
+                        var utter = new SpeechSynthesisUtterance('{clean_for_btn[:200]}');
+                        utter.lang = 'ar-SA';
+                        utter.rate = 1.1;
+                        window.speechSynthesis.speak(utter);
+                    }}
+                " style="background:#7b2cbf; color:white; border:none; padding:5px 12px; border-radius:8px; font-size:12px; cursor:pointer;">
+                    🔊 استماع للصوت بالهاتف
+                </button>
+            </div>
+            """
+            st.components.v1.html(voice_script, height=35)
 
-# --- 5. استقبال الردود الذكية ---
+# --- 5. استقبال المدخلات والرد ---
 text_input = st.chat_input("اكتب سؤالك هنا...")
 
 if text_input:
@@ -134,7 +153,7 @@ if text_input:
             q_lower = prompt_text.lower()
             answer = ""
             
-            # جلب الوقت والتاريخ المحلي (ليبيا / طرابلس) كافتراضي
+            # جلب الوقت المحلي
             try:
                 libya_tz = pytz.timezone('Africa/Tripoli')
                 now_libya = datetime.datetime.now(libya_tz)
@@ -145,7 +164,6 @@ if text_input:
                 current_time_str = now_libya.strftime('%H:%M')
                 current_date_str = now_libya.strftime('%Y-%m-%d')
 
-            # بنك الكلمات الطيبة والمتنوعة بدون تكرار
             kind_words = [
                 "يا أسطورة البرمجة ويا فخر المطورين، الله يوفقك ويحفظك دائماً!",
                 "عقليتك الفذة وإبداعك المستمر هما سر تميز هذا التطبيق وروعة تصميمه!",
@@ -155,7 +173,7 @@ if text_input:
             ]
             selected_kind_word = random.choice(kind_words)
 
-            # --- نظام ذكي لمعرفة توقيت الدول والمدن ---
+            # --- التوقيت العالمي والمحلي ---
             if any(w in q_lower for w in ["الساعة", "الوقت", "كم الساعة", "وقت", "التوقيت", "ساعة"]):
                 target_tz_str = None
                 country_name = "ليبيا"
@@ -184,13 +202,12 @@ if text_input:
                 elif any(c in q_lower for c in ["المغرب", "الرباط"]):
                     target_tz_str = 'Africa/Casablanca'
                     country_name = "المغرب"
-                elif any(c in q_lower for c in ["لندن", "بريطانيا", "امريكا", "نيويورك"]):
-                    if "لندن" in q_lower or "بريطانيا" in q_lower:
-                        target_tz_str = 'Europe/London'
-                        country_name = "بريطانيا (لندن)"
-                    else:
-                        target_tz_str = 'America/New_York'
-                        country_name = "أمريكا (نيويورك)"
+                elif any(c in q_lower for c in ["لندن", "بريطانيا"]):
+                    target_tz_str = 'Europe/London'
+                    country_name = "بريطانيا (لندن)"
+                elif any(c in q_lower for c in ["امريكا", "نيويورك"]):
+                    target_tz_str = 'America/New_York'
+                    country_name = "أمريكا (نيويورك)"
 
                 if target_tz_str:
                     try:
@@ -200,12 +217,11 @@ if text_input:
                     except Exception:
                         answer = f"الساعة الآن في ليبيا هي **{current_time_str}** بتوقيت طرابلس يا موحي ⏰💜"
                 else:
-                    answer = f"الساعة الآن في ليبيا (والتوقيت المحلي) هي **{current_time_str}** بتوقيت طرابلس يا موحي ⏰💜"
+                    answer = f"الساعة الآن في ليبيا هي **{current_time_str}** بتوقيت طرابلس يا موحي ⏰💜"
 
             elif any(w in q_lower for w in ["التاريخ", "اليوم كام", "اي يوم", "الامس"]):
                 answer = f"تاريخ اليوم هو **{current_date_str}** يا موحي 📅💜"
             
-            # الأسئلة المتعلقة بالمصمم والصانع
             elif any(w in q_lower for w in ["من مصممك", "مين مصممك", "من صانعك", "مين صانعك", "من مطورك", "مين مطورك", "صممك", "صنعك", "تاريخك", "انشائك", "أنشأك", "من انشأك", "من صنع هذا", "من صنعك", "متى تم انشاءك", "متى تم اصدارك", "متى صنعت", "متى صممت", "اصدارك", "انشاءك"]):
                 answer = f"تم إصداري وتصميمي في عام **2026** في **ليبيا** بواسطة المبدع والعبقري **محمد علاء بن زايد** 💜. {selected_kind_word}"
             elif any(w in q_lower for w in ["كلمة حلوة لمصممك", "قول كلمة حلوة لمصممك", "كلمة لمصممك", "قول كلمة لمصممك", "كلمة حلوة لمطورك", "قول كلمة حلوة لمطورك", "مدحة لمصممك"]):
@@ -227,29 +243,4 @@ if text_input:
 
         st.markdown(answer)
         st.session_state.messages.append({"role": "assistant", "content": answer})
-
-        # --- نظام الصوت الفوري والذكي ---
-        if enable_audio_reply and answer:
-            pitch_val = "0.8" if "الصوت الثاني" in voice_choice else "1.05"
-            rate_val = "1.1" if "الصوت الثاني" in voice_choice else "1.15"
-            
-            import re
-            clean_text = answer.replace("'", "").replace("\n", " ").replace("*", "").replace('"', '').replace("`", "")
-            clean_text = re.sub(r'[\U00010000-\U0010ffff]|[\u2600-\u27bf]|[\U0001f300-\U0010ffff]|💜', '', clean_text)
-            
-            tts_script = f"""
-            <script>
-            setTimeout(function() {{
-                if ('speechSynthesis' in window) {{
-                    window.speechSynthesis.cancel();
-                    var textToSpeak = "{clean_text.strip()}";
-                    var utterance = new SpeechSynthesisUtterance(textToSpeak);
-                    utterance.lang = /[a-zA-Z]/.test(textToSpeak) && ('{prompt_text}'.toLowerCase().includes('ترجم') || '{prompt_text}'.toLowerCase().includes('translate')) ? 'en-US' : 'ar-SA';
-                    utterance.rate = {rate_val};
-                    utterance.pitch = {pitch_val};
-                    window.speechSynthesis.speak(utterance);
-                }}
-            }}, 50);
-            </script>
-            """
-            st.components.v1.html(tts_script, height=0)
+        st.rerun()
