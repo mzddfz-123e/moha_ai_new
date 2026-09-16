@@ -7,7 +7,7 @@ import streamlit as st
 
 # --- 1. إعدادات الصفحة والستايل (بنفسجي، أبيض، وكتابة سوداء صافية) ---
 st.set_page_config(
-    page_title="Moha AI v6.0 | محمد علاء بن زايد",
+    page_title="Moha AI v6.1 | محمد علاء بن زايد",
     page_icon="💜",
     layout="centered"
 )
@@ -55,7 +55,7 @@ st.markdown("""
     </style>
 """, unsafe_allow_html=True)
 
-st.markdown('<div class="designer-card">💜 Moha AI v6.0 (النسخة الصوتية المطورة) | صانعي محمد علاء بن زايد 💜</div>', unsafe_allow_html=True)
+st.markdown('<div class="designer-card">💜 Moha AI v6.1 (النسخة النهائية المستقرة) | صانعي محمد علاء بن زايد 💜</div>', unsafe_allow_html=True)
 
 if "messages" not in st.session_state:
     st.session_state.messages = []
@@ -69,7 +69,6 @@ with st.sidebar:
     
     enable_audio_reply = st.toggle("🔊 تفعيل الرد الصوتي المستمر", value=False)
     
-    # اختيار الصوت الأول أو الثاني بخصائص خفيفة وسريعة
     voice_choice = st.selectbox("🗣️ اختر الصوت:", (
         "🔊 الصوت الأول (طبيعي وخفيف - عربي/إنجليزي)", 
         "🔊 الصوت الثاني (عميق وواضح - عربي/إنجليزي)"
@@ -198,35 +197,27 @@ if prompt_text:
                 st.markdown(answer)
                 st.session_state.messages.append({"role": "assistant", "content": answer})
 
-                # --- نظام الصوت المطور والمتواصل (صوتين، خفيف، ويدعم الإنجليزية والعربية حتى نهاية النص) ---
+                # --- نظام الصوت الخالي من الأخطاء ---
                 if enable_audio_reply and answer:
-                    # تحديد خصائص الصوت الأول أو الثاني حسب اختيار المستخدم
-                    if "الصوت الثاني" in voice_choice:
-                        pitch_val = "0.8"   # صوت أعمق
-                        rate_val = "1.1"    # خفيف ومستمر
-                    else:
-                        pitch_val = "1.05"  # صوت طبيعي أول
-                        rate_val = "1.15"   # خفيف وسريع
-
-                    # تنظيف النص لتجنب الأخطاء البرمجية أثناء النطق
+                    pitch_val = "0.8" if "الصوت الثاني" in voice_choice else "1.05"
+                    rate_val = "1.1" if "الصوت الثاني" in voice_choice else "1.15"
+                    
                     clean_text = answer.replace("'", "").replace("\n", " ").replace("*", "").replace('"', '').replace("`", "")
                     
-                    # الكود البرمجي المتطور للنطق المستمر حتى انتهاء النص
+                    # استخدام تنسيق سليم لتجنب خطأ f-string في بايثون
                     tts_script = f"""
                     <script>
-                    if ('speechSynthesis' in window) {
-                        window.speechSynthesis.cancel();
-                        var textToSpeak = "{clean_text}";
-                        var utterance = new SpeechSynthesisUtterance(textToSpeak);
-                        
-                        // تحديد اللغة تلقائياً إذا كان النص يحتوي على حروف إنجليزية أو عربية
-                        utterance.lang = /[a-zA-Z]/.test(textToSpeak) ? 'en-US' : 'ar-SA';
-                        utterance.rate = {rate_val};
-                        utterance.pitch = {pitch_val};
-                        
-                        // ضمان استمرار التحدث حتى يكتمل النص بالكامل
-                        window.speechSynthesis.speak(utterance);
-                    }
+                    (function() {{
+                        if ('speechSynthesis' in window) {{
+                            window.speechSynthesis.cancel();
+                            var textToSpeak = "{clean_text}";
+                            var utterance = new SpeechSynthesisUtterance(textToSpeak);
+                            utterance.lang = /[a-zA-Z]/.test(textToSpeak) ? 'en-US' : 'ar-SA';
+                            utterance.rate = {rate_val};
+                            utterance.pitch = {pitch_val};
+                            window.speechSynthesis.speak(utterance);
+                        }}
+                    }})();
                     </script>
                     """
                     st.components.v1.html(tts_script, height=0)
