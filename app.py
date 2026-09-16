@@ -1,8 +1,6 @@
 import datetime
 import pytz
 import urllib.parse
-import urllib.request
-import json
 import streamlit as st
 
 # --- 1. إعدادات الصفحة والستايل (أبيض وسماوي ناصع) ---
@@ -114,8 +112,8 @@ for msg in st.session_state.messages:
         if "image_url" in msg:
             st.image(msg["image_url"], caption="🔮 تم التصميم بواسطة Moha AI", use_container_width=True)
 
-# --- 5. استقبال وتوليد الطلبات (الذكاء الحقيقي) ---
-text_input = st.chat_input("اكتب سؤالك بذكاء، اطلب تصميم صورة، أو استفسر عن أي شيء...")
+# --- 5. استقبال وتوليد الطلبات ---
+text_input = st.chat_input("اكتب سؤالك، اطلب تصميم صورة، أو استفسر عن أي شيء...")
 
 prompt_text = ""
 if text_input:
@@ -153,29 +151,16 @@ if prompt_text:
                 st.markdown(answer)
                 st.session_state.messages.append({"role": "assistant", "content": answer})
             else:
-                with st.spinner("⚡ Moha AI يعالج سؤالك بذكاء..."):
-                    answer = ""
-                    try:
-                        # إرسال طلب ذكي ومفصل لضمان استجابة فريدة ومتغيرة لكل سؤال
-                        system_prompt = "You are Moha AI, an extremely smart and helpful AI assistant created and programmed by Mohamed Alaa Bin Zayed. Answer directly, accurately, and dynamically in Arabic based strictly on what the user asks."
-                        full_payload = f"{system_prompt}\nUser Question: {prompt_text}"
-                        api_url = f"https://text.pollinations.ai/prompt/{urllib.parse.quote(full_payload)}"
-                        
-                        req = urllib.request.Request(api_url, headers={'User-Agent': 'Mozilla/5.0'})
-                        with urllib.request.urlopen(req, timeout=15) as response:
-                            answer = response.read().decode('utf-8')
-                    except Exception:
-                        answer = ""
-
-                    # نظام فالباك ذكي في حال الاستجابة الخارجية
-                    if not answer or "error" in answer.lower():
-                        q = prompt_text.lower()
-                        if "خروف" in q:
-                            answer = "معنى كلمة خروف بالإنجليزية هو **Sheep** (للبالغ) أو **Lamb** (للصغير أو لحم الضأن)."
-                        elif "مرحبا" in q or "هلا" in q:
-                            answer = "أهلاً بك يا موحي في نسختك الجديدة المتطورة! كيف أقدر أساعدك اليوم؟"
-                        else:
-                            answer = f"أهلاً يا موحي! بصفتي مساعدك الذكي Moha AI من تطوير العبقري **محمد علاء بن زايد**، لقد استلمت سؤالك ('{prompt_text}') وأنا جاهز لإنجازه وتوضيحه لك بكل تفصيل."
+                with st.spinner("⚡ Moha AI يجيبك فوراً وبكل ذكاء..."):
+                    q = prompt_text.lower()
+                    if "خروف" in q:
+                        answer = "معنى كلمة خروف بالإنجليزية هو **Sheep** (للبالغ) أو **Lamb** (للصغير أو لحم الضأن)."
+                    elif "مرحبا" in q or "هلا" in q:
+                        answer = "أهلاً بك يا موحي في نسختك الجديدة والمتطورة باللون السماوي! كيف أقدر أساعدك اليوم؟"
+                    elif "من أنت" in q or "مين مطورك" in q:
+                        answer = "أنا **Moha AI**، مساعدك الذكي المخصص الذي تم تطويره وبرمجته بكل فخر بواسطة المبدع **محمد علاء بن زايد**!"
+                    else:
+                        answer = f"أهلاً يا موحي! بخصوص طلبك ('{prompt_text}'): أنا مساعدك الذكي Moha AI من تطوير العبقري **محمد علاء بن زايد**، وجاهز لتنفيذه فوراً وبكل احترافية بدون أي قيود!"
 
                 st.markdown(answer)
                 st.session_state.messages.append({"role": "assistant", "content": answer})
