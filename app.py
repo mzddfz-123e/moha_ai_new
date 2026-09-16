@@ -13,12 +13,8 @@ st.set_page_config(
     layout="centered"
 )
 
-# --- 2. القائمة الجانبية (Sidebar) ---
+# --- 2. القائمة الجانبية (Sidebar) بعد إزالة الـ Dark/Light ---
 with st.sidebar:
-    st.header("🎨 مظهر التطبيق")
-    theme_mode = st.radio("اختر الوضع:", ["وضع هافت (فاتح)", "وضع داكن (Dark)"], index=0)
-    
-    st.write("---")
     st.header("⚙️ إعدادات الصوت")
     voice_choice = st.selectbox("🗣️ اختر الصوت:", ("🔊 الصوت الأول (خفيف)", "🔊 الصوت الثاني (عميق)"))
     
@@ -50,59 +46,44 @@ with st.sidebar:
         st.session_state.messages = []
         st.rerun()
 
-# --- 3. تصميم الألوان ---
-if theme_mode == "وضع داكن (Dark)":
-    bg_color = "#121212"
-    text_color = "#ffffff"
-    card_bg = "linear-gradient(135deg, #2d1b4e 0%, #3b0764 50%, #4c1d95 100%)"
-    card_text = "#f3e8ff"
-    border_col = "#7c3aed"
-    input_bg = "#1e1e1e"
-else:
-    bg_color = "#faf5ff"
-    text_color = "#000000"
-    card_bg = "linear-gradient(135deg, #e9d5ff 0%, #d8b4fe 50%, #c084fc 100%)"
-    card_text = "#3b0764"
-    border_col = "#a855f7"
-    input_bg = "#ffffff"
-
-st.markdown(f"""
+# --- 3. التصميم الداكن الفخم والكتابة البيضاء بالكامل ---
+st.markdown("""
     <style>
-    .main {{ direction: rtl; text-align: right; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }}
-    stChatMessage {{ direction: rtl; text-align: right; }}
-    .stApp {{ background-color: {bg_color}; color: {text_color} !important; }}
+    .main { direction: rtl; text-align: right; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
+    stChatMessage { direction: rtl; text-align: right; }
+    .stApp { background-color: #121212 !important; color: #ffffff !important; }
     
-    p, span, label, div, h1, h2, h3, h4, h5, h6, input, .stMarkdown, .stText {{
-        color: {text_color} !important;
-    }}
+    p, span, label, div, h1, h2, h3, h4, h5, h6, input, .stMarkdown, .stText, .stChatInput textarea {
+        color: #ffffff !important;
+    }
     
-    .designer-card {{
-        background: {card_bg};
-        color: {card_text} !important; padding: 18px; border-radius: 18px;
+    .designer-card {
+        background: linear-gradient(135deg, #2d1b4e 0%, #3b0764 50%, #4c1d95 100%);
+        color: #f3e8ff !important; padding: 18px; border-radius: 18px;
         text-align: center; font-size: 20px; font-weight: bold;
-        box-shadow: 0 4px 15px rgba(123, 44, 191, 0.15); margin-bottom: 20px;
-        border: 2px solid {border_col};
-    }}
+        box-shadow: 0 4px 15px rgba(123, 44, 191, 0.25); margin-bottom: 20px;
+        border: 2px solid #7c3aed;
+    }
     
-    .designer-card *, .designer-card span, .designer-card div {{
-        color: {card_text} !important;
-    }}
+    .designer-card *, .designer-card span, .designer-card div {
+        color: #f3e8ff !important;
+    }
     
-    .stButton>button {{
+    .stButton>button {
         width: 100%; border-radius: 12px;
         background: linear-gradient(90deg, #7b2cbf, #9d4edd);
         color: #ffffff !important; font-size: 15px; font-weight: bold; border: none; padding: 10px;
-    }}
+    }
     
-    div[data-baseweb="input"], div[data-baseweb="base-input"] {{
-        border: 2px solid #9d4edd !important;
-        background-color: {input_bg} !important;
+    div[data-baseweb="input"], div[data-baseweb="base-input"] {
+        border: 2px solid #7c3aed !important;
+        background-color: #1e1e1e !important;
         border-radius: 12px !important;
-    }}
-    div[data-baseweb="input"]:focus-within, div[data-baseweb="base-input"]:focus-within {{
-        border-color: #7b2cbf !important;
-        box-shadow: 0 0 10px rgba(123, 44, 191, 0.3) !important;
-    }}
+    }
+    div[data-baseweb="input"]:focus-within, div[data-baseweb="base-input"]:focus-within {
+        border-color: #9d4edd !important;
+        box-shadow: 0 0 10px rgba(123, 44, 191, 0.4) !important;
+    }
     </style>
 """, unsafe_allow_html=True)
 
@@ -114,10 +95,9 @@ if "messages" not in st.session_state:
 if "saved_chats" not in st.session_state:
     st.session_state.saved_chats = {}
 
-# --- دالة تنظيف النص وتكييفه للنطق السليم ---
+# --- دالة تنظيف النص للنطق الآمن ---
 import re
 def clean_text_for_speech(text):
-    # إزالة الرموز
     clean = re.sub(r'[*#_`~()\[\]{}]', '', text)
     clean = re.sub(r'[^\w\s\u0600-\u06FF,.\?!-]', '', clean)
     return clean.strip()
@@ -132,12 +112,12 @@ for idx, msg in enumerate(st.session_state.messages):
                 speech_ready_text = speech_ready_text[:250]
                 
             pitch_val = "0.85" if "الصوت الثاني" in voice_choice else "1.0"
-            rate_val = "0.95" if "الصوت الثاني" in voice_choice else "1.0" # أبطئ شوي عشان ينطق الوقت بوضوح تام
+            rate_val = "0.95" if "الصوت الثاني" in voice_choice else "1.0"
             
             unique_id = f"audio_btn_{idx}"
             voice_script = f"""
             <div style="margin-top: 8px;">
-                <button id="{unique_id}" style="background:linear-gradient(90deg, #7b2cbf, #9d4edd); color:white; border:none; padding:8px 16px; border-radius:10px; font-size:13px; cursor:pointer; font-weight:bold; box-shadow: 0 2px 5px rgba(0,0,0,0.2);">
+                <button id="{unique_id}" style="background:linear-gradient(90deg, #7b2cbf, #9d4edd); color:white; border:none; padding:8px 16px; border-radius:10px; font-size:13px; cursor:pointer; font-weight:bold; box-shadow: 0 2px 5px rgba(0,0,0,0.3);">
                     🔊 استماع للصوت بالهاتف
                 </button>
                 <script>
@@ -188,7 +168,7 @@ if text_input:
             ]
             selected_kind_word = random.choice(kind_words)
 
-            # --- التوقيت بنظام 12 ساعة والكلمات لتجنب قراءة الأرقام الخاطئة ---
+            # --- التوقيت العالمي والمحلي المتطور ---
             if any(w in q_lower for w in ["الساعة", "الوقت", "كم الساعة", "وقت", "التوقيت", "ساعة"]):
                 target_tz = libya_tz if 'libya_tz' in locals() else None
                 country_name = "ليبيا"
@@ -229,12 +209,10 @@ if text_input:
                 except Exception:
                     t_now = now_libya
 
-                # تحويل بنظام 12 ساعة مع كتابة كلمة "الساعة" و "الدقيقة" لتنطق صح تماماً
                 hour_12 = t_now.strftime('%I').lstrip('0')
                 minute_str = t_now.strftime('%M')
                 period = "مساءً" if int(t_now.strftime('%H')) >= 12 else "صباحاً"
                 
-                # ترجمة رقمية نصية آمنة للمتصفح
                 answer = f"الساعة الآن في {country_name} هي الساعة {hour_12} و {minute_str} دقيقة {period} يا موحي."
 
             elif any(w in q_lower for w in ["التاريخ", "اليوم كام", "اي يوم", "الامس"]):
@@ -247,7 +225,7 @@ if text_input:
                 answer = f"إلى صانعي الحبيب محمد علاء بن زايد: {selected_kind_word}"
             else:
                 current_time_str = now_libya.strftime('%H:%M')
-                system_instruction = f"You are Moha AI, an extremely smart assistant created by Mohamed Alaa in Libya in 2026. Current time is {current_time_str}. The user is writing in Arabic, so you MUST reply ONLY in Arabic. Keep sentences clear and concise."
+                system_instruction = f"You are Moha AI, an extremely smart assistant created by Mohamed Alaa in Libya in 2026. Current time is {current_time_str}. The user is writing in Arabic, so you MUST reply ONLY in Arabic with high intelligence, deep awareness, and professional accuracy."
                 full_query = f"{system_instruction}\nUser: {prompt_text}"
                 
                 try:
@@ -259,7 +237,7 @@ if text_input:
                     answer = ""
 
                 if not answer or "error" in answer.lower():
-                    answer = f"أهلاً يا موحي! بصفتي مساعدك الذكي المصمم في ليبيا ومن إبداع المطور محمد علاء بن زايد في عام 2026، استلمت طلبك. أنا جاهز لخدمتك بكل احترافية!"
+                    answer = f"أهلاً يا موحي! بصفتي مساعدك الذكي المصمم في ليبيا ومن إبداع المطور محمد علاء بن زايد في عام 2026، استلمت طلبك بكل عناية. أنا جاهز لخدمتك والإجابة على كل استفساراتك باحترافية تامة!"
 
         st.markdown(answer)
         st.session_state.messages.append({"role": "assistant", "content": answer})
