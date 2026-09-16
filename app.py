@@ -134,7 +134,7 @@ if text_input:
             q_lower = prompt_text.lower()
             answer = ""
             
-            # جلب الوقت والتاريخ المحلي (ليبيا / طرابلس)
+            # جلب الوقت والتاريخ المحلي (ليبيا / طرابلس) كافتراضي
             try:
                 libya_tz = pytz.timezone('Africa/Tripoli')
                 now_libya = datetime.datetime.now(libya_tz)
@@ -155,18 +155,63 @@ if text_input:
             ]
             selected_kind_word = random.choice(kind_words)
 
-            # الأسئلة المتعلقة بالوقت والساعة
-            if any(w in q_lower for w in ["الساعة", "الوقت", "كم الساعة", "وقت", "التوقيت"]):
-                answer = f"الساعة الآن في ليبيا هي **{current_time_str}** بتوقيت طرابلس يا موحي ⏰💜"
+            # --- نظام ذكي لمعرفة توقيت الدول والمدن ---
+            if any(w in q_lower for w in ["الساعة", "الوقت", "كم الساعة", "وقت", "التوقيت", "ساعة"]):
+                target_tz_str = None
+                country_name = "ليبيا"
+
+                if any(c in q_lower for c in ["مصر", "القاهرة"]):
+                    target_tz_str = 'Africa/Cairo'
+                    country_name = "مصر"
+                elif any(c in q_lower for c in ["السعودية", "مكة", "الرياض"]):
+                    target_tz_str = 'Asia/Riyadh'
+                    country_name = "السعودية"
+                elif any(c in q_lower for c in ["الإمارات", "دبي", "أبوظبي"]):
+                    target_tz_str = 'Asia/Dubai'
+                    country_name = "الإمارات"
+                elif any(c in q_lower for c in ["قطر", "الدوحة"]):
+                    target_tz_str = 'Asia/Qatar'
+                    country_name = "قطر"
+                elif any(c in q_lower for c in ["الكويت"]):
+                    target_tz_str = 'Asia/Kuwait'
+                    country_name = "الكويت"
+                elif any(c in q_lower for c in ["الجزائر"]):
+                    target_tz_str = 'Africa/Algiers'
+                    country_name = "الجزائر"
+                elif any(c in q_lower for c in ["تونس"]):
+                    target_tz_str = 'Africa/Tunis'
+                    country_name = "تونس"
+                elif any(c in q_lower for c in ["المغرب", "الرباط"]):
+                    target_tz_str = 'Africa/Casablanca'
+                    country_name = "المغرب"
+                elif any(c in q_lower for c in ["لندن", "بريطانيا", "امريكا", "نيويورك"]):
+                    if "لندن" in q_lower or "بريطانيا" in q_lower:
+                        target_tz_str = 'Europe/London'
+                        country_name = "بريطانيا (لندن)"
+                    else:
+                        target_tz_str = 'America/New_York'
+                        country_name = "أمريكا (نيويورك)"
+
+                if target_tz_str:
+                    try:
+                        t_zone = pytz.timezone(target_tz_str)
+                        t_time = datetime.datetime.now(t_zone).strftime('%H:%M')
+                        answer = f"الساعة الآن في **{country_name}** هي **{t_time}** يا موحي ⏰💜"
+                    except Exception:
+                        answer = f"الساعة الآن في ليبيا هي **{current_time_str}** بتوقيت طرابلس يا موحي ⏰💜"
+                else:
+                    answer = f"الساعة الآن في ليبيا (والتوقيت المحلي) هي **{current_time_str}** بتوقيت طرابلس يا موحي ⏰💜"
+
             elif any(w in q_lower for w in ["التاريخ", "اليوم كام", "اي يوم", "الامس"]):
                 answer = f"تاريخ اليوم هو **{current_date_str}** يا موحي 📅💜"
-            # الأسئلة المتعلقة بالمصمم، الصانع، تاريخ الإصدار، أو الإنشاء
+            
+            # الأسئلة المتعلقة بالمصمم والصانع
             elif any(w in q_lower for w in ["من مصممك", "مين مصممك", "من صانعك", "مين صانعك", "من مطورك", "مين مطورك", "صممك", "صنعك", "تاريخك", "انشائك", "أنشأك", "من انشأك", "من صنع هذا", "من صنعك", "متى تم انشاءك", "متى تم اصدارك", "متى صنعت", "متى صممت", "اصدارك", "انشاءك"]):
                 answer = f"تم إصداري وتصميمي في عام **2026** في **ليبيا** بواسطة المبدع والعبقري **محمد علاء بن زايد** 💜. {selected_kind_word}"
             elif any(w in q_lower for w in ["كلمة حلوة لمصممك", "قول كلمة حلوة لمصممك", "كلمة لمصممك", "قول كلمة لمصممك", "كلمة حلوة لمطورك", "قول كلمة حلوة لمطورك", "مدحة لمصممك"]):
                 answer = f"إلى صانعي الحبيب **محمد علاء بن زايد**: {selected_kind_word} 💜"
             else:
-                system_instruction = f"You are Moha AI, created by Mohamed Alaa in Libya in 2026. Current time is {current_time_str}. The user is writing in Arabic, so you MUST reply ONLY in Arabic unless the user explicitly asks you to translate a text into another language. Never mention OpenAI."
+                system_instruction = f"You are Moha AI, an extremely smart assistant created by Mohamed Alaa in Libya in 2026. Current time is {current_time_str}. The user is writing in Arabic, so you MUST reply ONLY in Arabic unless the user explicitly asks you to translate a text into another language. Never mention OpenAI."
                 full_query = f"{system_instruction}\nUser: {prompt_text}"
                 
                 try:
@@ -190,7 +235,7 @@ if text_input:
             
             import re
             clean_text = answer.replace("'", "").replace("\n", " ").replace("*", "").replace('"', '').replace("`", "")
-            clean_text = re.sub(r'[\U00010000-\U0010ffff]|[\u2600-\u27bf]|[\U0001f300-\U0001f6ff]|[\U0001f900-\U0001f9ff]|💜', '', clean_text)
+            clean_text = re.sub(r'[\U00010000-\U0010ffff]|[\u2600-\u27bf]|[\U0001f300-\U0010ffff]|💜', '', clean_text)
             
             tts_script = f"""
             <script>
