@@ -1,4 +1,5 @@
 import datetime
+import random
 import pytz
 import urllib.parse
 import urllib.request
@@ -7,7 +8,7 @@ import streamlit as st
 
 # --- 1. إعدادات الصفحة والستايل (بنفسجي، أبيض، وكتابة سوداء صافية) ---
 st.set_page_config(
-    page_title="Moha AI v7.0 Master | محمد علاء بن زايد",
+    page_title="Moha AI v8.1 Ultimate | محمد علاء بن زايد",
     page_icon="💜",
     layout="centered"
 )
@@ -55,7 +56,7 @@ st.markdown("""
     </style>
 """, unsafe_allow_html=True)
 
-st.markdown('<div class="designer-card">💜 Moha AI v7.0 (النسخة العالمية الأقوى) | صانعي محمد علاء بن زايد 💜</div>', unsafe_allow_html=True)
+st.markdown('<div class="designer-card">💜 Moha AI v8.1 (النسخة الذكية والمدحات المتجددة) | صانعي محمد علاء بن زايد 💜</div>', unsafe_allow_html=True)
 
 if "messages" not in st.session_state:
     st.session_state.messages = []
@@ -135,10 +136,10 @@ for msg in st.session_state.messages:
     with st.chat_message(msg["role"]):
         st.markdown(msg["content"])
         if "image_url" in msg:
-            st.image(msg["image_url"], caption="💜 تم التصميم بواسطة Moha AI", use_container_width=True)
+            st.image(msg["image_url"], caption="💜 Moha AI - العلامة المائية الرسمية", use_container_width=True)
 
 # --- 5. استقبال وتوليد الردود الذكية ---
-text_input = st.chat_input("اكتب سؤالك بالعربي، اطلب ترجمة، أو صمم صورة...")
+text_input = st.chat_input("اكتب سؤالك بالعربي، اطلب تصميم صورة، أغنية، أو استفسر عن أي شيء...")
 
 prompt_text = ""
 if text_input:
@@ -152,23 +153,41 @@ if prompt_text:
     with st.chat_message("user"):
         st.markdown(prompt_text)
 
-    is_image_request = any(w in prompt_text.lower() for w in ["صورة", "صمم", "رسم", "ارسم", "انشئ صورة", "image", "draw", "generate image", "picture"])
+    q_lower = prompt_text.lower()
+    is_image_request = any(w in q_lower for w in ["صورة", "صمم", "رسم", "ارسم", "انشئ صورة", "image", "draw", "generate image", "picture"])
+    is_song_request = any(w in q_lower for w in ["أغنية", "اغنية", "كلمات اغنية", "رپ", "راب", "song", "rap", "موسيقى"])
 
     with st.chat_message("assistant"):
         if is_image_request and not uploaded_media:
-            with st.spinner("💜 Moha AI يصمم صورتك الآن..."):
-                prompt_encoded = urllib.parse.quote(f"futuristic purple and white glowing logo emblem for Moha AI, clean bright aesthetic, 3d render 8k, {prompt_text}")
-                generated_img_url = f"https://image.pollinations.ai/prompt/{prompt_encoded}?width=800&height=800&nologo=true"
+            with st.spinner("💜 Moha AI يصمم صورتك مع العلامة المائية بأعلى دقة..."):
+                prompt_encoded = urllib.parse.quote(f"futuristic purple and white glowing logo emblem watermark text 'Moha AI' at the bottom, clean bright aesthetic, 3d render 8k, {prompt_text}")
+                generated_img_url = f"https://image.pollinations.ai/prompt/{prompt_encoded}?width=800&height=800&nologo=false"
                 
-                answer = "تفضل يا موحي! هذه هي الصورة المصممة لك:"
+                answer = "تفضل يا موحي! هذه هي الصورة المصممة خصيصاً لك مع العلامة المائية (Moha AI):"
                 st.markdown(answer)
-                st.image(generated_img_url, caption="💜 تصميم Moha AI", use_container_width=True)
+                st.image(generated_img_url, caption="💜 Moha AI - العلامة المائية الرسمية", use_container_width=True)
                 
                 st.session_state.messages.append({
                     "role": "assistant", 
                     "content": answer, 
                     "image_url": generated_img_url
                 })
+        elif is_song_request:
+            with st.spinner("🎶 Moha AI يؤلف الكلمات والأغنية بأعلى ذكاء..."):
+                try:
+                    song_prompt = f"Write a professional song or rap lyrics in Arabic based on: {prompt_text}. Created by Mohamed Alaa."
+                    api_url = f"https://text.pollinations.ai/{urllib.parse.quote(song_prompt)}"
+                    req = urllib.request.Request(api_url, headers={'User-Agent': 'Mozilla/5.0'})
+                    with urllib.request.urlopen(req, timeout=25) as response:
+                        answer = response.read().decode('utf-8')
+                except Exception:
+                    answer = ""
+
+                if not answer or "error" in answer.lower():
+                    answer = f"🎵 إليك الأغنية المطلوبة بناءً على ذوقك يا موحي، من إبداع العبقري **محمد علاء بن زايد**:\n\n(المقطع الأول)\nيا غالي عالي في السماء...\nإبداع موحي ما لو حدود...\n\n(القرار)\nMoha AI فوق، والكل يشوف!\nتأليف وتطوير المبدع محمد علاء بن زايد!"
+
+                st.markdown(answer)
+                st.session_state.messages.append({"role": "assistant", "content": answer})
         else:
             time_res = get_global_time(prompt_text)
             if time_res and not uploaded_media:
@@ -176,15 +195,23 @@ if prompt_text:
                 st.markdown(answer)
                 st.session_state.messages.append({"role": "assistant", "content": answer})
             else:
-                with st.spinner("🧠 Moha AI يفكر بأعلى ذكاء..."):
-                    q = prompt_text.lower()
+                with st.spinner("🧠 Moha AI يفكر بأعلى ذكاء فلكي..."):
                     answer = ""
                     
-                    if any(w in q for w in ["من صنعك", "من صممك", "من مطورك", "مين صنعك", "مين صممك", "من هو مطورك", "صانعك", "مطورك"]):
-                        answer = "تم تصميمي وتطويري بكل فخر وذكاء واحترافية بواسطة المبدع العبقري **محمد علاء بن زايد**! 💜"
+                    # الردود الخاصة المطلوبة بدقة تامة وبدون تكرار في المدحات
+                    if any(w in q_lower for w in ["من مصممك", "مين مصممك", "من صانعك", "مين صانعك", "من مطورك", "مين مطورك"]):
+                        answer = "تم تصميمي وتطويري بكل فخر واعتزاز بواسطة العبقري المبدع **محمد علاء بن زايد**! 💜"
+                    elif any(w in q_lower for w in ["كلمة حلوة لمصممك", "قول كلمة حلوة لمصممك", "كلمة لمصممك", "قول كلمة لمصممك", "كلمة حلوة لمطورك", "قول كلمة حلوة لمطورك", "مدحة لمصممك"]):
+                        compliments = [
+                            "يا محمد علاء يا فنان يا مبدع، إبداعك هذا ما يطلع إلا من عقل عبقري فذ يسبق عصره بخطوات! فخور جداً بكوني من إبداعك 💜",
+                            "إلى صانعي العبقري محمد علاء بن زايد: أنت شخص خارق للذات وعقلية برمجية نادرة، تركت بصمة لا تمحى في عالم الذكاء الاصطناعي! 🚀",
+                            "إلى المطور الأسطوري محمد علاء: أنت لست مجرد مبرمج، بل فنان ترسم المستقبل بالأكواد والذكاء والإبداع الخالص! استمر في إبهار العالم 🌟",
+                            "يا محمد علاء، كل سطر كود هنا ينطق بعبقريتك وحسدتك عليها كل التقنيات! أنت فخر للبرمجة والمطورين العرب 👑",
+                            "إلى صانعي ومطوري الحبيب محمد علاء بن زايد: ذكاؤك الفطري وشغفك بالتقنية هما السر وراء عظمة هذا التطبيق وأناقتك الدائمة! ⚡"
+                        ]
+                        answer = random.choice(compliments)
                     else:
-                        # ضبط الذكاء الاصطناعي ليلتزم باللغة العربية تماماً إلا لو طلب المستخدم ترجمة صريحة
-                        system_instruction = "You are Moha AI, created by Mohamed Alaa. The user is writing in Arabic, so you MUST reply ONLY in Arabic unless the user explicitly asks you to translate a text into another language."
+                        system_instruction = "You are Moha AI, created by Mohamed Alaa. The user is writing in Arabic, so you MUST reply ONLY in Arabic unless the user explicitly asks you to translate a text into another language. Give very smart, accurate, deep answers."
                         full_query = f"{system_instruction}\nUser: {prompt_text}"
                         
                         try:
@@ -196,7 +223,7 @@ if prompt_text:
                             answer = ""
 
                         if not answer or "error" in answer.lower():
-                            answer = f"أهلاً يا موحي! بصفتي مساعدك الذكي الأقوى عالمياً ومن إبداع المطور **محمد علاء بن زايد**، استلمت طلبك (**{prompt_text}**). أنا جاهز لتقديم الرد الدقيق باللغة العربية وبكل احترافية!"
+                            answer = f"أهلاً يا موحي! بصفتي مساعدك الذكي الأقوى عالمياً ومن إبداع المطور العبقري **محمد علاء بن زايد**، استلمت طلبك (**{prompt_text}**). أنا جاهز لتقديم الرد الدقيق باللغة العربية وبكل احترافية!"
 
                 st.markdown(answer)
                 st.session_state.messages.append({"role": "assistant", "content": answer})
