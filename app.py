@@ -5,9 +5,9 @@ import urllib.request
 import json
 import streamlit as st
 
-# --- 1. إعدادات الصفحة والستايل الأسطوري (بنفسجي، أبيض، وكتابة سوداء صافية) ---
+# --- 1. إعدادات الصفحة والستايل (بنفسجي، أبيض، وكتابة سوداء صافية) ---
 st.set_page_config(
-    page_title="Moha AI v5.0 Ultimate | محمد علاء بن زايد",
+    page_title="Moha AI v6.0 | محمد علاء بن زايد",
     page_icon="💜",
     layout="centered"
 )
@@ -55,7 +55,7 @@ st.markdown("""
     </style>
 """, unsafe_allow_html=True)
 
-st.markdown('<div class="designer-card">💜 Moha AI v5.0 (النسخة الخارقة والذكية جداً) | صانعي محمد علاء بن زايد 💜</div>', unsafe_allow_html=True)
+st.markdown('<div class="designer-card">💜 Moha AI v6.0 (النسخة الصوتية المطورة) | صانعي محمد علاء بن زايد 💜</div>', unsafe_allow_html=True)
 
 if "messages" not in st.session_state:
     st.session_state.messages = []
@@ -65,10 +65,15 @@ if "saved_chats" not in st.session_state:
 
 # --- 2. القائمة الجانبية (Sidebar) ---
 with st.sidebar:
-    st.header("⚙️ خيارات التطبيق")
+    st.header("⚙️ خيارات التطبيق والصوت")
     
-    enable_audio_reply = st.toggle("🔊 تفعيل الرد الصوتي", value=False)
-    voice_gender = st.selectbox("🗣️ صوت المتحدث:", ("صوت أنثى (طبيعي وسريع)", "صوت رجل (طبيعي وسريع)"))
+    enable_audio_reply = st.toggle("🔊 تفعيل الرد الصوتي المستمر", value=False)
+    
+    # اختيار الصوت الأول أو الثاني بخصائص خفيفة وسريعة
+    voice_choice = st.selectbox("🗣️ اختر الصوت:", (
+        "🔊 الصوت الأول (طبيعي وخفيف - عربي/إنجليزي)", 
+        "🔊 الصوت الثاني (عميق وواضح - عربي/إنجليزي)"
+    ))
     
     st.write("---")
     st.header("💾 حفظ المحادثة")
@@ -133,8 +138,8 @@ for msg in st.session_state.messages:
         if "image_url" in msg:
             st.image(msg["image_url"], caption="💜 تم التصميم بواسطة Moha AI", use_container_width=True)
 
-# --- 5. نظام الذكاء الاصطناعي الأسطوري (أذكى، متصل، وبدون مفاتيح) ---
-text_input = st.chat_input("اكتب أي سؤال صعب، اطلب تصميم صورة، أو استفسر عن أي شيء...")
+# --- 5. استقبال وتوليد الردود الذكية ---
+text_input = st.chat_input("اكتب أي سؤال (عربي أو إنجليزي)، اطلب تصميم صورة، أو استفسر عن أي شيء...")
 
 prompt_text = ""
 if text_input:
@@ -152,7 +157,7 @@ if prompt_text:
 
     with st.chat_message("assistant"):
         if is_image_request and not uploaded_media:
-            with st.spinner("💜 Moha AI يصمم صورتك الآن بالستايل الأسطوري..."):
+            with st.spinner("💜 Moha AI يصمم صورتك الآن..."):
                 prompt_encoded = urllib.parse.quote(f"futuristic purple and white glowing logo emblem for Moha AI, clean bright aesthetic, 3d render 8k, {prompt_text}")
                 generated_img_url = f"https://image.pollinations.ai/prompt/{prompt_encoded}?width=800&height=800&nologo=true"
                 
@@ -172,15 +177,13 @@ if prompt_text:
                 st.markdown(answer)
                 st.session_state.messages.append({"role": "assistant", "content": answer})
             else:
-                with st.spinner("🧠 Moha AI يفكر بعمق ليعطيك أذكى إجابة..."):
+                with st.spinner("🧠 Moha AI يجهّز الإجابة..."):
                     q = prompt_text.lower()
                     answer = ""
                     
-                    # الرد الدقيق لمن صنعك
                     if any(w in q for w in ["من صنعك", "من صممك", "من مطورك", "مين صنعك", "مين صممك", "من هو مطورك", "صانعك", "مطورك"]):
                         answer = "تم تصميمي وتطويري بكل فخر، ذكاء، واحترافية بواسطة المبدع العبقري **محمد علاء بن زايد**! 💜"
                     else:
-                        # محاولة جلب ذكاء اصطناعي متطور جداً مفتوح المصدر ومجاني بالكامل
                         try:
                             api_url = f"https://text.pollinations.ai/{urllib.parse.quote(prompt_text)}"
                             req = urllib.request.Request(api_url, headers={'User-Agent': 'Mozilla/5.0'})
@@ -189,24 +192,41 @@ if prompt_text:
                         except Exception:
                             answer = ""
 
-                        # نظام احتياطي ذكي وفوري لو توقف الاتصال
                         if not answer or "error" in answer.lower():
-                            answer = f"أهلاً يا موحي! بصفتي مساعدك الذكي (الإصدار الخامس الأسطوري) ومن إبداع المطور **محمد علاء بن زايد**، استلمت سؤالك (**{prompt_text}**). أنا مجهز لأعطيك أعمق وأدق التحليلات بكل ذكاء وسرعة دون أي قيود!"
+                            answer = f"أهلاً يا موحي! بصفتي مساعدك الذكي ومن إبداع المطور **محمد علاء بن زايد**، استلمت طلبك (**{prompt_text}**). أنا جاهز لتقديم الحل الدقيق والكامل لك فوراً وبكل احترافية!"
 
                 st.markdown(answer)
                 st.session_state.messages.append({"role": "assistant", "content": answer})
 
+                # --- نظام الصوت المطور والمتواصل (صوتين، خفيف، ويدعم الإنجليزية والعربية حتى نهاية النص) ---
                 if enable_audio_reply and answer:
-                    pitch_val = "0.85" if "رجل" in voice_gender else "1.05"
-                    clean_text = answer.replace("'", "").replace("\n", " ").replace("*", "").replace('"', '')
+                    # تحديد خصائص الصوت الأول أو الثاني حسب اختيار المستخدم
+                    if "الصوت الثاني" in voice_choice:
+                        pitch_val = "0.8"   # صوت أعمق
+                        rate_val = "1.1"    # خفيف ومستمر
+                    else:
+                        pitch_val = "1.05"  # صوت طبيعي أول
+                        rate_val = "1.15"   # خفيف وسريع
+
+                    # تنظيف النص لتجنب الأخطاء البرمجية أثناء النطق
+                    clean_text = answer.replace("'", "").replace("\n", " ").replace("*", "").replace('"', '').replace("`", "")
+                    
+                    # الكود البرمجي المتطور للنطق المستمر حتى انتهاء النص
                     tts_script = f"""
                     <script>
-                    window.speechSynthesis.cancel();
-                    var msg = new SpeechSynthesisUtterance("{clean_text}");
-                    msg.lang = 'ar-SA';
-                    msg.rate = 1.25;
-                    msg.pitch = {pitch_val};
-                    window.speechSynthesis.speak(msg);
+                    if ('speechSynthesis' in window) {
+                        window.speechSynthesis.cancel();
+                        var textToSpeak = "{clean_text}";
+                        var utterance = new SpeechSynthesisUtterance(textToSpeak);
+                        
+                        // تحديد اللغة تلقائياً إذا كان النص يحتوي على حروف إنجليزية أو عربية
+                        utterance.lang = /[a-zA-Z]/.test(textToSpeak) ? 'en-US' : 'ar-SA';
+                        utterance.rate = {rate_val};
+                        utterance.pitch = {pitch_val};
+                        
+                        // ضمان استمرار التحدث حتى يكتمل النص بالكامل
+                        window.speechSynthesis.speak(utterance);
+                    }
                     </script>
                     """
                     st.components.v1.html(tts_script, height=0)
