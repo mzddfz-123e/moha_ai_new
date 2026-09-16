@@ -6,7 +6,7 @@ import urllib.request
 import json
 import streamlit as st
 
-# --- 1. إعدادات الصفحة والستايل (مخصص للأيفون: خلفية بيضاء ونصوص سوداء صافية) ---
+# --- 1. إعدادات الصفحة والستايل ---
 st.set_page_config(
     page_title="Moha AI | محمد علاء بن زايد",
     page_icon="💜",
@@ -19,20 +19,22 @@ st.markdown("""
     stChatMessage { direction: rtl; text-align: right; }
     .stApp { background-color: #faf5ff; color: #000000 !important; }
     
-    /* فرض اللون الأسود الداكن على كافة النصوص والأيقونات لتظهر بوضوح تام على الأيفون */
+    /* فرض اللون الأسود الداكن على كافة النصوص والأيقونات */
     p, span, label, div, h1, h2, h3, h4, h5, h6, input, .stMarkdown, .stText {
         color: #000000 !important;
     }
     
+    /* تعديل البانر العلوي: بنفسجي هافت (فاتح) والقلبين بنفسجي داكن */
     .designer-card {
-        background: linear-gradient(135deg, #7b2cbf 0%, #9d4edd 50%, #c77dff 100%);
-        color: #ffffff !important; padding: 18px; border-radius: 18px;
+        background: linear-gradient(135deg, #e9d5ff 0%, #d8b4fe 50%, #c084fc 100%);
+        color: #3b0764 !important; padding: 18px; border-radius: 18px;
         text-align: center; font-size: 20px; font-weight: bold;
-        box-shadow: 0 4px 15px rgba(123, 44, 191, 0.2); margin-bottom: 20px;
+        box-shadow: 0 4px 15px rgba(123, 44, 191, 0.15); margin-bottom: 20px;
+        border: 2px solid #a855f7;
     }
     
     .designer-card *, .designer-card span, .designer-card div {
-        color: #ffffff !important;
+        color: #3b0764 !important;
     }
     
     .stButton>button {
@@ -41,15 +43,20 @@ st.markdown("""
         color: #ffffff !important; font-size: 15px; font-weight: bold; border: none; padding: 10px;
     }
     
+    /* مربع الكتابة بإطار بنفسجي أنيق */
     div[data-baseweb="input"], div[data-baseweb="base-input"] {
         border: 2px solid #9d4edd !important;
         background-color: #ffffff !important;
         border-radius: 12px !important;
     }
+    div[data-baseweb="input"]:focus-within, div[data-baseweb="base-input"]:focus-within {
+        border-color: #7b2cbf !important;
+        box-shadow: 0 0 10px rgba(123, 44, 191, 0.3) !important;
+    }
     </style>
 """, unsafe_allow_html=True)
 
-st.markdown('<div class="designer-card">💜 Moha AI | صانعي محمد علاء بن زايد 💜</div>', unsafe_allow_html=True)
+st.markdown('<div class="designer-card"><span style="color: #581c87 !important;">💜</span> صانعي هو محمد علاء بن زايد <span style="color: #581c87 !important;">💜</span></div>', unsafe_allow_html=True)
 
 if "messages" not in st.session_state:
     st.session_state.messages = []
@@ -106,13 +113,13 @@ if text_input:
         st.markdown(prompt_text)
 
     with st.chat_message("assistant"):
-        with st.spinner("جاري التفكير..."):
+        with st.spinner("جاري التفكير بدقة..."):
             q_lower = prompt_text.lower()
             answer = ""
             
             # الطلبات الخاصة بدقة تامة
             if any(w in q_lower for w in ["من مصممك", "مين مصممك", "من صانعك", "مين صانعك", "من مطورك", "مين مطورك"]):
-                answer = "تم تصميمي وتطويري بكل فخر واعتزاز بواسطة العبقري المبدع **محمد علاء بن زايد**! 💜"
+                answer = "تم تصميمي وتطويري بكل فخر واعتزاز بواسطة العبقري **محمد علاء بن زايد**! 💜"
             elif any(w in q_lower for w in ["كلمة حلوة لمصممك", "قول كلمة حلوة لمصممك", "كلمة لمصممك", "قول كلمة لمصممك", "كلمة حلوة لمطورك", "قول كلمة حلوة لمطورك", "مدحة لمصممك"]):
                 compliments = [
                     "يا محمد علاء يا فنان يا مبدع، إبداعك هذا ما يطلع إلا من عقل عبقري فذ يسبق عصره بخطوات! فخور جداً بكوني من إبداعك 💜",
