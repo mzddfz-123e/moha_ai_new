@@ -114,9 +114,10 @@ if "messages" not in st.session_state:
 if "saved_chats" not in st.session_state:
     st.session_state.saved_chats = {}
 
-# --- دالة تنظيف متطورة تحذف أي رمز ممكن يلخبط الهاتف ---
+# --- دالة تنظيف النص وتكييفه للنطق السليم ---
 import re
 def clean_text_for_speech(text):
+    # إزالة الرموز
     clean = re.sub(r'[*#_`~()\[\]{}]', '', text)
     clean = re.sub(r'[^\w\s\u0600-\u06FF,.\?!-]', '', clean)
     return clean.strip()
@@ -127,14 +128,12 @@ for idx, msg in enumerate(st.session_state.messages):
         st.markdown(msg["content"])
         if msg["role"] == "assistant":
             speech_ready_text = clean_text_for_speech(msg["content"])
-            # تقصير النص قليلاً لو كان طويلاً جداً عشان يضمن نطق سريع وبدون كراش بالهاتف
             if len(speech_ready_text) > 250:
                 speech_ready_text = speech_ready_text[:250]
                 
             pitch_val = "0.85" if "الصوت الثاني" in voice_choice else "1.0"
-            rate_val = "1.0" if "الصوت الثاني" in voice_choice else "1.05"
+            rate_val = "0.95" if "الصوت الثاني" in voice_choice else "1.0" # أبطئ شوي عشان ينطق الوقت بوضوح تام
             
-            # زر صوتي جافا سكربت آمن 100% للجوال
             unique_id = f"audio_btn_{idx}"
             voice_script = f"""
             <div style="margin-top: 8px;">
@@ -177,12 +176,8 @@ if text_input:
             try:
                 libya_tz = pytz.timezone('Africa/Tripoli')
                 now_libya = datetime.datetime.now(libya_tz)
-                current_time_str = now_libya.strftime('%H:%M')
-                current_date_str = now_libya.strftime('%Y-%m-%d')
             except Exception:
                 now_libya = datetime.datetime.now()
-                current_time_str = now_libya.strftime('%H:%M')
-                current_date_str = now_libya.strftime('%Y-%m-%d')
 
             kind_words = [
                 "يا أسطورة البرمجة ويا فخر المطورين، الله يوفقك ويحفظك دائماً!",
@@ -193,53 +188,57 @@ if text_input:
             ]
             selected_kind_word = random.choice(kind_words)
 
-            # --- التوقيت والدول ---
+            # --- التوقيت بنظام 12 ساعة والكلمات لتجنب قراءة الأرقام الخاطئة ---
             if any(w in q_lower for w in ["الساعة", "الوقت", "كم الساعة", "وقت", "التوقيت", "ساعة"]):
-                target_tz_str = None
+                target_tz = libya_tz if 'libya_tz' in locals() else None
                 country_name = "ليبيا"
 
                 if any(c in q_lower for c in ["مصر", "القاهرة"]):
-                    target_tz_str = 'Africa/Cairo'
+                    target_tz = pytz.timezone('Africa/Cairo')
                     country_name = "مصر"
                 elif any(c in q_lower for c in ["السعودية", "مكة", "الرياض"]):
-                    target_tz_str = 'Asia/Riyadh'
+                    target_tz = pytz.timezone('Asia/Riyadh')
                     country_name = "السعودية"
                 elif any(c in q_lower for c in ["الإمارات", "دبي", "أبوظبي"]):
-                    target_tz_str = 'Asia/Dubai'
+                    target_tz = pytz.timezone('Asia/Dubai')
                     country_name = "الإمارات"
                 elif any(c in q_lower for c in ["قطر", "الدوحة"]):
-                    target_tz_str = 'Asia/Qatar'
+                    target_tz = pytz.timezone('Asia/Qatar')
                     country_name = "قطر"
                 elif any(c in q_lower for c in ["الكويت"]):
-                    target_tz_str = 'Asia/Kuwait'
+                    target_tz = pytz.timezone('Asia/Kuwait')
                     country_name = "الكويت"
                 elif any(c in q_lower for c in ["الجزائر"]):
-                    target_tz_str = 'Africa/Algiers'
+                    target_tz = pytz.timezone('Africa/Algiers')
                     country_name = "الجزائر"
                 elif any(c in q_lower for c in ["تونس"]):
-                    target_tz_str = 'Africa/Tunis'
+                    target_tz = pytz.timezone('Africa/Tunis')
                     country_name = "تونس"
                 elif any(c in q_lower for c in ["المغرب", "الرباط"]):
-                    target_tz_str = 'Africa/Casablanca'
+                    target_tz = pytz.timezone('Africa/Casablanca')
                     country_name = "المغرب"
                 elif any(c in q_lower for c in ["لندن", "بريطانيا"]):
-                    target_tz_str = 'Europe/London'
+                    target_tz = pytz.timezone('Europe/London')
                     country_name = "بريطانيا"
                 elif any(c in q_lower for c in ["امريكا", "نيويورك"]):
-                    target_tz_str = 'America/New_York'
+                    target_tz = pytz.timezone('America/New_York')
                     country_name = "أمريكا"
 
-                if target_tz_str:
-                    try:
-                        t_zone = pytz.timezone(target_tz_str)
-                        t_time = datetime.datetime.now(t_zone).strftime('%H:%M')
-                        answer = f"الساعة الآن في {country_name} هي {t_time} يا موحي."
-                    except Exception:
-                        answer = f"الساعة الآن في ليبيا هي {current_time_str} بتوقيت طرابلس يا موحي."
-                else:
-                    answer = f"الساعة الآن في ليبيا هي {current_time_str} بتوقيت طرابلس يا موحي."
+                try:
+                    t_now = datetime.datetime.now(target_tz)
+                except Exception:
+                    t_now = now_libya
+
+                # تحويل بنظام 12 ساعة مع كتابة كلمة "الساعة" و "الدقيقة" لتنطق صح تماماً
+                hour_12 = t_now.strftime('%I').lstrip('0')
+                minute_str = t_now.strftime('%M')
+                period = "مساءً" if int(t_now.strftime('%H')) >= 12 else "صباحاً"
+                
+                # ترجمة رقمية نصية آمنة للمتصفح
+                answer = f"الساعة الآن في {country_name} هي الساعة {hour_12} و {minute_str} دقيقة {period} يا موحي."
 
             elif any(w in q_lower for w in ["التاريخ", "اليوم كام", "اي يوم", "الامس"]):
+                current_date_str = now_libya.strftime('%Y-%m-%d')
                 answer = f"تاريخ اليوم هو {current_date_str} يا موحي."
             
             elif any(w in q_lower for w in ["من مصممك", "مين مصممك", "من صانعك", "مين صانعك", "من مطورك", "مين مطورك", "صممك", "صنعك", "تاريخك", "انشائك", "أنشأك", "من انشأك", "من صنع هذا", "من صنعك", "متى تم انشاءك", "متى تم اصدارك", "متى صنعت", "متى صممت", "اصدارك", "انشاءك"]):
@@ -247,6 +246,7 @@ if text_input:
             elif any(w in q_lower for w in ["كلمة حلوة لمصممك", "قول كلمة حلوة لمصممك", "كلمة لمصممك", "قول كلمة لمصممك", "كلمة حلوة لمطورك", "قول كلمة حلوة لمطورك", "مدحة لمصممك"]):
                 answer = f"إلى صانعي الحبيب محمد علاء بن زايد: {selected_kind_word}"
             else:
+                current_time_str = now_libya.strftime('%H:%M')
                 system_instruction = f"You are Moha AI, an extremely smart assistant created by Mohamed Alaa in Libya in 2026. Current time is {current_time_str}. The user is writing in Arabic, so you MUST reply ONLY in Arabic. Keep sentences clear and concise."
                 full_query = f"{system_instruction}\nUser: {prompt_text}"
                 
