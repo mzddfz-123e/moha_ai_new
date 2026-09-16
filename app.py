@@ -6,66 +6,19 @@ import urllib.request
 import json
 import streamlit as st
 
-# --- 1. إعدادات الصفحة والستايل ---
+# --- 1. إعدادات الصفحة ---
 st.set_page_config(
     page_title="Moha AI | محمد علاء بن زايد",
     page_icon="💜",
     layout="centered"
 )
 
-st.markdown("""
-    <style>
-    .main { direction: rtl; text-align: right; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
-    stChatMessage { direction: rtl; text-align: right; }
-    .stApp { background-color: #faf5ff; color: #000000 !important; }
-    
-    /* فرض اللون الأسود الداكن على كافة النصوص والأيقونات */
-    p, span, label, div, h1, h2, h3, h4, h5, h6, input, .stMarkdown, .stText {
-        color: #000000 !important;
-    }
-    
-    /* البانر العلوي: بنفسجي هافت والقلبين بنفسجي داكن */
-    .designer-card {
-        background: linear-gradient(135deg, #e9d5ff 0%, #d8b4fe 50%, #c084fc 100%);
-        color: #3b0764 !important; padding: 18px; border-radius: 18px;
-        text-align: center; font-size: 20px; font-weight: bold;
-        box-shadow: 0 4px 15px rgba(123, 44, 191, 0.15); margin-bottom: 20px;
-        border: 2px solid #a855f7;
-    }
-    
-    .designer-card *, .designer-card span, .designer-card div {
-        color: #3b0764 !important;
-    }
-    
-    .stButton>button {
-        width: 100%; border-radius: 12px;
-        background: linear-gradient(90deg, #7b2cbf, #9d4edd);
-        color: #ffffff !important; font-size: 15px; font-weight: bold; border: none; padding: 10px;
-    }
-    
-    /* مربع الكتابة بإطار بنفسجي أنيق */
-    div[data-baseweb="input"], div[data-baseweb="base-input"] {
-        border: 2px solid #9d4edd !important;
-        background-color: #ffffff !important;
-        border-radius: 12px !important;
-    }
-    div[data-baseweb="input"]:focus-within, div[data-baseweb="base-input"]:focus-within {
-        border-color: #7b2cbf !important;
-        box-shadow: 0 0 10px rgba(123, 44, 191, 0.3) !important;
-    }
-    </style>
-""", unsafe_allow_html=True)
-
-st.markdown('<div class="designer-card"><span style="color: #581c87 !important;">💜</span> صانعي هو محمد علاء بن زايد <span style="color: #581c87 !important;">💜</span></div>', unsafe_allow_html=True)
-
-if "messages" not in st.session_state:
-    st.session_state.messages = []
-
-if "saved_chats" not in st.session_state:
-    st.session_state.saved_chats = {}
-
-# --- 2. القائمة الجانبية (Sidebar) ---
+# --- 2. القائمة الجانبية (Sidebar) لإدارة الوضع والتفضيلات أولاً ---
 with st.sidebar:
+    st.header("🎨 مظهر التطبيق")
+    theme_mode = st.radio("اختر الوضع:", ["وضع هافت (فاتح)", "وضع داكن (Dark)"], index=0)
+    
+    st.write("---")
     st.header("⚙️ إعدادات الصوت")
     enable_audio_reply = st.toggle("🔊 تفعيل الرد الصوتي المستمر", value=False)
     voice_choice = st.selectbox("🗣️ اختر الصوت:", ("🔊 الصوت الأول (خفيف)", "🔊 الصوت الثاني (عميق)"))
@@ -74,14 +27,14 @@ with st.sidebar:
     st.header("💾 المحادثات")
     chat_title_input = st.text_input("اسم المحادثة:", placeholder="مثال: أفكار")
     if st.button("💾 حفظ المحادثة الحالية"):
-        if st.session_state.messages:
+        if st.session_state.get("messages"):
             title = chat_title_input.strip() if chat_title_input.strip() else f"محادثة {datetime.datetime.now().strftime('%H:%M')}"
             st.session_state.saved_chats[title] = list(st.session_state.messages)
             st.success("تم الحفظ!")
         else:
             st.warning("المحادثة فارغة!")
 
-    if st.session_state.saved_chats:
+    if "saved_chats" in st.session_state and st.session_state.saved_chats:
         selected_chat = st.selectbox("محادثاتك المحفوظة:", list(st.session_state.saved_chats.keys()))
         col1, col2 = st.columns(2)
         with col1:
@@ -98,12 +51,75 @@ with st.sidebar:
         st.session_state.messages = []
         st.rerun()
 
-# --- 3. عرض رسائل المحادثة ---
+# --- 3. تطبيق الألوان ديناميكياً حسب اختيارك (داكن أو هافت) ---
+if theme_mode == "وضع داكن (Dark)":
+    bg_color = "#121212"
+    text_color = "#ffffff"
+    card_bg = "linear-gradient(135deg, #2d1b4e 0%, #3b0764 50%, #4c1d95 100%)"
+    card_text = "#f3e8ff"
+    border_col = "#7c3aed"
+    input_bg = "#1e1e1e"
+else:
+    bg_color = "#faf5ff"
+    text_color = "#000000"
+    card_bg = "linear-gradient(135deg, #e9d5ff 0%, #d8b4fe 50%, #c084fc 100%)"
+    card_text = "#3b0764"
+    border_col = "#a855f7"
+
+st.markdown(f"""
+    <style>
+    .main {{ direction: rtl; text-align: right; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }}
+    stChatMessage {{ direction: rtl; text-align: right; }}
+    .stApp {{ background-color: {bg_color}; color: {text_color} !important; }}
+    
+    p, span, label, div, h1, h2, h3, h4, h5, h6, input, .stMarkdown, .stText {{
+        color: {text_color} !important;
+    }}
+    
+    .designer-card {{
+        background: {card_bg};
+        color: {card_text} !important; padding: 18px; border-radius: 18px;
+        text-align: center; font-size: 20px; font-weight: bold;
+        box-shadow: 0 4px 15px rgba(123, 44, 191, 0.15); margin-bottom: 20px;
+        border: 2px solid {border_col};
+    }}
+    
+    .designer-card *, .designer-card span, .designer-card div {{
+        color: {card_text} !important;
+    }}
+    
+    .stButton>button {{
+        width: 100%; border-radius: 12px;
+        background: linear-gradient(90deg, #7b2cbf, #9d4edd);
+        color: #ffffff !important; font-size: 15px; font-weight: bold; border: none; padding: 10px;
+    }}
+    
+    div[data-baseweb="input"], div[data-baseweb="base-input"] {{
+        border: 2px solid #9d4edd !important;
+        background-color: {input_bg} !important;
+        border-radius: 12px !important;
+    }}
+    div[data-baseweb="input"]:focus-within, div[data-baseweb="base-input"]:focus-within {{
+        border-color: #7b2cbf !important;
+        box-shadow: 0 0 10px rgba(123, 44, 191, 0.3) !important;
+    }}
+    </style>
+""", unsafe_allow_html=True)
+
+st.markdown(f'<div class="designer-card"><span>💜</span> صانعي هو محمد علاء بن زايد <span>💜</span></div>', unsafe_allow_html=True)
+
+if "messages" not in st.session_state:
+    st.session_state.messages = []
+
+if "saved_chats" not in st.session_state:
+    st.session_state.saved_chats = {}
+
+# --- 4. عرض رسائل المحادثة ---
 for msg in st.session_state.messages:
     with st.chat_message(msg["role"]):
         st.markdown(msg["content"])
 
-# --- 4. استقبال الردود الذكية ---
+# --- 5. استقبال الردود الذكية ---
 text_input = st.chat_input("اكتب سؤالك هنا...")
 
 if text_input:
@@ -117,6 +133,17 @@ if text_input:
             q_lower = prompt_text.lower()
             answer = ""
             
+            # جلب الوقت والتاريخ المحلي (ليبيا / طرابلس)
+            try:
+                libya_tz = pytz.timezone('Africa/Tripoli')
+                now_libya = datetime.datetime.now(libya_tz)
+                current_time_str = now_libya.strftime('%H:%M')
+                current_date_str = now_libya.strftime('%Y-%m-%d')
+            except Exception:
+                now_libya = datetime.datetime.now()
+                current_time_str = now_libya.strftime('%H:%M')
+                current_date_str = now_libya.strftime('%Y-%m-%d')
+
             # بنك الكلمات الطيبة والمتنوعة بدون تكرار
             kind_words = [
                 "يا أسطورة البرمجة ويا فخر المطورين، الله يوفقك ويحفظك دائماً!",
@@ -127,13 +154,18 @@ if text_input:
             ]
             selected_kind_word = random.choice(kind_words)
 
+            # الأسئلة المتعلقة بالوقت والساعة
+            if any(w in q_lower for w in ["الساعة", "الوقت", "كم الساعة", "وقت", "التوقيت"]):
+                answer = f"الساعة الآن في ليبيا هي **{current_time_str}** بتوقيت طرابلس يا موحي ⏰💜"
+            elif any(w in q_lower for w in ["التاريخ", "اليوم كام", "اي يوم", "الامس"]):
+                answer = f"تاريخ اليوم هو **{current_date_str}** يا موحي 📅💜"
             # الأسئلة المتعلقة بالمصمم، الصانع، تاريخ الإصدار، أو الإنشاء
-            if any(w in q_lower for w in ["من مصممك", "مين مصممك", "من صانعك", "مين صانعك", "من مطورك", "مين مطورك", "صممك", "صنعك", "تاريخك", "انشائك", "أنشأك", "من انشأك", "من صنع هذا", "من صنعك", "متى تم انشاءك", "متى تم اصدارك", "متى صنعت", "متى صممت", "اصدارك", "انشاءك"]):
+            elif any(w in q_lower for w in ["من مصممك", "مين مصممك", "من صانعك", "مين صانعك", "من مطورك", "مين مطورك", "صممك", "صنعك", "تاريخك", "انشائك", "أنشأك", "من انشأك", "من صنع هذا", "من صنعك", "متى تم انشاءك", "متى تم اصدارك", "متى صنعت", "متى صممت", "اصدارك", "انشاءك"]):
                 answer = f"تم إصداري وتصميمي في عام **2026** في **ليبيا** بواسطة المبدع والعبقري **محمد علاء بن زايد** 💜. {selected_kind_word}"
             elif any(w in q_lower for w in ["كلمة حلوة لمصممك", "قول كلمة حلوة لمصممك", "كلمة لمصممك", "قول كلمة لمصممك", "كلمة حلوة لمطورك", "قول كلمة حلوة لمطورك", "مدحة لمصممك"]):
                 answer = f"إلى صانعي الحبيب **محمد علاء بن زايد**: {selected_kind_word} 💜"
             else:
-                system_instruction = "You are Moha AI, created by Mohamed Alaa in Libya in 2026. The user is writing in Arabic, so you MUST reply ONLY in Arabic unless the user explicitly asks you to translate a text into another language. Never mention OpenAI."
+                system_instruction = f"You are Moha AI, created by Mohamed Alaa in Libya in 2026. Current time is {current_time_str}. The user is writing in Arabic, so you MUST reply ONLY in Arabic unless the user explicitly asks you to translate a text into another language. Never mention OpenAI."
                 full_query = f"{system_instruction}\nUser: {prompt_text}"
                 
                 try:
