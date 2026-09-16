@@ -20,7 +20,6 @@ with st.sidebar:
     
     st.write("---")
     st.header("⚙️ إعدادات الصوت")
-    enable_audio_reply = st.toggle("🔊 تفعيل الرد الصوتي التلقائي", value=False)
     voice_choice = st.selectbox("🗣️ اختر الصوت:", ("🔊 الصوت الأول (خفيف)", "🔊 الصوت الثاني (عميق)"))
     
     st.write("---")
@@ -115,29 +114,41 @@ if "messages" not in st.session_state:
 if "saved_chats" not in st.session_state:
     st.session_state.saved_chats = {}
 
-# --- 4. عرض المحادثة مع زر نطق لكل رسالة (حل مشكلة الهاتف) ---
+# --- دالة تنظيف النص تماماً من النجمات والإيموجي لضمان نطق سليم 100% ---
+import re
+def clean_text_for_speech(text):
+    # إزالة النجمات وعلامات الماركداون
+    clean = text.replace("*", "").replace("#", "").replace("`", "").replace("_", "")
+    # إزالة الإيموجي والرموز التعبيرية
+    clean = re.sub(r'[^\w\s\u0600-\u06FF,.\?!]', '', clean)
+    return clean.strip()
+
+# --- 4. عرض المحادثة مع زر نطق نظيف وصافي ---
 for idx, msg in enumerate(st.session_state.messages):
     with st.chat_message(msg["role"]):
         st.markdown(msg["content"])
-        # إذا كانت الرسالة من المساعد، نضيف زر صوت يدوي يضمن الاشتغال في التلفون
         if msg["role"] == "assistant":
-            clean_for_btn = msg["content"].replace("'", "").replace('"', '').replace('\n', ' ')
+            speech_ready_text = clean_text_for_speech(msg["content"])
+            pitch_val = "0.8" if "الصوت الثاني" in voice_choice else "1.05"
+            rate_val = "1.1" if "الصوت الثاني" in voice_choice else "1.15"
+            
             voice_script = f"""
             <div style="margin-top: 5px;">
                 <button onclick="
                     if ('speechSynthesis' in window) {{
                         window.speechSynthesis.cancel();
-                        var utter = new SpeechSynthesisUtterance('{clean_for_btn[:200]}');
+                        var utter = new SpeechSynthesisUtterance('{speech_ready_text[:300]}');
                         utter.lang = 'ar-SA';
-                        utter.rate = 1.1;
+                        utter.rate = {rate_val};
+                        utterance.pitch = {pitch_val};
                         window.speechSynthesis.speak(utter);
                     }}
-                " style="background:#7b2cbf; color:white; border:none; padding:5px 12px; border-radius:8px; font-size:12px; cursor:pointer;">
+                " style="background:#7b2cbf; color:white; border:none; padding:6px 14px; border-radius:8px; font-size:13px; cursor:pointer; font-weight:bold;">
                     🔊 استماع للصوت بالهاتف
                 </button>
             </div>
             """
-            st.components.v1.html(voice_script, height=35)
+            st.components.v1.html(voice_script, height=40)
 
 # --- 5. استقبال المدخلات والرد ---
 text_input = st.chat_input("اكتب سؤالك هنا...")
@@ -153,7 +164,6 @@ if text_input:
             q_lower = prompt_text.lower()
             answer = ""
             
-            # جلب الوقت المحلي
             try:
                 libya_tz = pytz.timezone('Africa/Tripoli')
                 now_libya = datetime.datetime.now(libya_tz)
@@ -173,7 +183,7 @@ if text_input:
             ]
             selected_kind_word = random.choice(kind_words)
 
-            # --- التوقيت العالمي والمحلي ---
+            # --- التوقيت العالمي والمحلي المطور ---
             if any(w in q_lower for w in ["الساعة", "الوقت", "كم الساعة", "وقت", "التوقيت", "ساعة"]):
                 target_tz_str = None
                 country_name = "ليبيا"
@@ -213,19 +223,19 @@ if text_input:
                     try:
                         t_zone = pytz.timezone(target_tz_str)
                         t_time = datetime.datetime.now(t_zone).strftime('%H:%M')
-                        answer = f"الساعة الآن في **{country_name}** هي **{t_time}** يا موحي ⏰💜"
+                        answer = f"الساعة الآن في {country_name} هي {t_time} يا موحي."
                     except Exception:
-                        answer = f"الساعة الآن في ليبيا هي **{current_time_str}** بتوقيت طرابلس يا موحي ⏰💜"
+                        answer = f"الساعة الآن في ليبيا هي {current_time_str} بتوقيت طرابلس يا موحي."
                 else:
-                    answer = f"الساعة الآن في ليبيا هي **{current_time_str}** بتوقيت طرابلس يا موحي ⏰💜"
+                    answer = f"الساعة الآن في ليبيا هي {current_time_str} بتوقيت طرابلس يا موحي."
 
             elif any(w in q_lower for w in ["التاريخ", "اليوم كام", "اي يوم", "الامس"]):
-                answer = f"تاريخ اليوم هو **{current_date_str}** يا موحي 📅💜"
+                answer = f"تاريخ اليوم هو {current_date_str} يا موحي."
             
             elif any(w in q_lower for w in ["من مصممك", "مين مصممك", "من صانعك", "مين صانعك", "من مطورك", "مين مطورك", "صممك", "صنعك", "تاريخك", "انشائك", "أنشأك", "من انشأك", "من صنع هذا", "من صنعك", "متى تم انشاءك", "متى تم اصدارك", "متى صنعت", "متى صممت", "اصدارك", "انشاءك"]):
-                answer = f"تم إصداري وتصميمي في عام **2026** في **ليبيا** بواسطة المبدع والعبقري **محمد علاء بن زايد** 💜. {selected_kind_word}"
+                answer = f"تم إصداري وتصميمي في عام 2026 في ليبيا بواسطة المبدع والعبقري محمد علاء بن زايد. {selected_kind_word}"
             elif any(w in q_lower for w in ["كلمة حلوة لمصممك", "قول كلمة حلوة لمصممك", "كلمة لمصممك", "قول كلمة لمصممك", "كلمة حلوة لمطورك", "قول كلمة حلوة لمطورك", "مدحة لمصممك"]):
-                answer = f"إلى صانعي الحبيب **محمد علاء بن زايد**: {selected_kind_word} 💜"
+                answer = f"إلى صانعي الحبيب محمد علاء بن زايد: {selected_kind_word}"
             else:
                 system_instruction = f"You are Moha AI, an extremely smart assistant created by Mohamed Alaa in Libya in 2026. Current time is {current_time_str}. The user is writing in Arabic, so you MUST reply ONLY in Arabic unless the user explicitly asks you to translate a text into another language. Never mention OpenAI."
                 full_query = f"{system_instruction}\nUser: {prompt_text}"
@@ -239,7 +249,7 @@ if text_input:
                     answer = ""
 
                 if not answer or "error" in answer.lower():
-                    answer = f"أهلاً يا موحي! بصفتي مساعدك الذكي المصمم في ليبيا ومن إبداع المطور **محمد علاء بن زايد** في عام 2026، استلمت طلبك (**{prompt_text}**). أنا جاهز لخدمتك بكل احترافية!"
+                    answer = f"أهلاً يا موحي! بصفتي مساعدك الذكي المصمم في ليبيا ومن إبداع المطور محمد علاء بن زايد في عام 2026، استلمت طلبك ({prompt_text}). أنا جاهز لخدمتك بكل احترافية!"
 
         st.markdown(answer)
         st.session_state.messages.append({"role": "assistant", "content": answer})
