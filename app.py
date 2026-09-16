@@ -3,7 +3,7 @@ import pytz
 import urllib.parse
 import streamlit as st
 
-# --- 1. إعدادات الصفحة والستايل (أبيض وسماوي ناصع) ---
+# --- 1. إعدادات الصفحة والستايل ---
 st.set_page_config(
     page_title="Moha AI | محمد علاء بن زايد",
     page_icon="🔮",
@@ -112,7 +112,7 @@ for msg in st.session_state.messages:
         if "image_url" in msg:
             st.image(msg["image_url"], caption="🔮 تم التصميم بواسطة Moha AI", use_container_width=True)
 
-# --- 5. استقبال وتوليد الطلبات ---
+# --- 5. الردود الذكية المتنوعة ---
 text_input = st.chat_input("اكتب سؤالك، اطلب تصميم صورة، أو استفسر عن أي شيء...")
 
 prompt_text = ""
@@ -131,11 +131,11 @@ if prompt_text:
 
     with st.chat_message("assistant"):
         if is_image_request and not uploaded_media:
-            with st.spinner("🎨 Moha AI يصمم صورتك الآن بالستايل السماوي..."):
+            with st.spinner("🎨 Moha AI يصمم صورتك الآن..."):
                 prompt_encoded = urllib.parse.quote(f"futuristic cyan and white glowing logo emblem for Moha AI, clean bright aesthetic, 3d render 8k, {prompt_text}")
                 generated_img_url = f"https://image.pollinations.ai/prompt/{prompt_encoded}?width=800&height=800&nologo=true"
                 
-                answer = "تفضل يا موحي! هذه هي الصورة المصممة لك:"
+                answer = "تفضل يا موحي! هذه هي الصورة المصممة بناءً على طلبك:"
                 st.markdown(answer)
                 st.image(generated_img_url, caption="🔮 تصميم Moha AI", use_container_width=True)
                 
@@ -151,16 +151,22 @@ if prompt_text:
                 st.markdown(answer)
                 st.session_state.messages.append({"role": "assistant", "content": answer})
             else:
-                with st.spinner("⚡ Moha AI يجيبك فوراً وبكل ذكاء..."):
+                with st.spinner("⚡ يجري التفكير في إجابة دقيقة..."):
                     q = prompt_text.lower()
-                    if "خروف" in q:
+                    
+                    if any(w in q for w in ["كيف حال", "شخبارك", "ايش اخبارك", "اهلين"]):
+                        answer = "الحمد لله يا موحي كل شيء تمام وعال العال! أنت كيف حالك، وشنو جديد مشاريعك اليوم؟"
+                    elif any(w in q for w in ["من أنت", "مين مطورك", "تعريفك", "شنو اسمك"]):
+                        answer = "أنا **Moha AI**، مساعدك الشخصي والذكي الذي تم تصميمه وتطويره بواسطة العبقري **محمد علاء بن زايد**."
+                    elif "خروف" in q:
                         answer = "معنى كلمة خروف بالإنجليزية هو **Sheep** (للبالغ) أو **Lamb** (للصغير أو لحم الضأن)."
-                    elif "مرحبا" in q or "هلا" in q:
-                        answer = "أهلاً بك يا موحي في نسختك الجديدة والمتطورة باللون السماوي! كيف أقدر أساعدك اليوم؟"
-                    elif "من أنت" in q or "مين مطورك" in q:
-                        answer = "أنا **Moha AI**، مساعدك الذكي المخصص الذي تم تطويره وبرمجته بكل فخر بواسطة المبدع **محمد علاء بن زايد**!"
+                    elif "م Milan" in q or "ميلان" in q:
+                        answer = "فورزا ميلان! دايماً في القلب يا موحي، الفريق العريق بألوانه الحمراء والداكنة."
+                    elif "رابط" in q or "موقعي" in q:
+                        answer = "رابط موقعك الحالي هو الذي تفتحه الآن على منصة Streamlit Cloud وتستعرض منه التطبيق!"
                     else:
-                        answer = f"أهلاً يا موحي! بخصوص طلبك ('{prompt_text}'): أنا مساعدك الذكي Moha AI من تطوير العبقري **محمد علاء بن زايد**، وجاهز لتنفيذه فوراً وبكل احترافية بدون أي قيود!"
+                        # ردود متنوعة ومفيدة حسب الكلمات المفتاحية لتجنب التكرار
+                        answer = f"أهلاً يا موحي! بخصوص موضوع (**{prompt_text}**): كـ مساعدة ذكية، أقدر أقول لك إنه موضوع مهم، وتحت أمرك لو حابب نبحث فيه بعمق، نكتب عنه كود برمجي، أو نلخص أفكاره في نقاط واضحة. تفضل اطلب اللي تحتاجه!"
 
                 st.markdown(answer)
                 st.session_state.messages.append({"role": "assistant", "content": answer})
