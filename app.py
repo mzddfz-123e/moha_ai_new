@@ -7,7 +7,7 @@ import streamlit as st
 
 # --- 1. إعدادات الصفحة والستايل (بنفسجي، أبيض، وكتابة سوداء صافية) ---
 st.set_page_config(
-    page_title="Moha AI v6.1 | محمد علاء بن زايد",
+    page_title="Moha AI v7.0 Master | محمد علاء بن زايد",
     page_icon="💜",
     layout="centered"
 )
@@ -55,7 +55,7 @@ st.markdown("""
     </style>
 """, unsafe_allow_html=True)
 
-st.markdown('<div class="designer-card">💜 Moha AI v6.1 (النسخة النهائية المستقرة) | صانعي محمد علاء بن زايد 💜</div>', unsafe_allow_html=True)
+st.markdown('<div class="designer-card">💜 Moha AI v7.0 (النسخة العالمية الأقوى) | صانعي محمد علاء بن زايد 💜</div>', unsafe_allow_html=True)
 
 if "messages" not in st.session_state:
     st.session_state.messages = []
@@ -70,8 +70,8 @@ with st.sidebar:
     enable_audio_reply = st.toggle("🔊 تفعيل الرد الصوتي المستمر", value=False)
     
     voice_choice = st.selectbox("🗣️ اختر الصوت:", (
-        "🔊 الصوت الأول (طبيعي وخفيف - عربي/إنجليزي)", 
-        "🔊 الصوت الثاني (عميق وواضح - عربي/إنجليزي)"
+        "🔊 الصوت الأول (طبيعي وخفيف)", 
+        "🔊 الصوت الثاني (عميق وواضح)"
     ))
     
     st.write("---")
@@ -138,7 +138,7 @@ for msg in st.session_state.messages:
             st.image(msg["image_url"], caption="💜 تم التصميم بواسطة Moha AI", use_container_width=True)
 
 # --- 5. استقبال وتوليد الردود الذكية ---
-text_input = st.chat_input("اكتب أي سؤال (عربي أو إنجليزي)، اطلب تصميم صورة، أو استفسر عن أي شيء...")
+text_input = st.chat_input("اكتب سؤالك بالعربي، اطلب ترجمة، أو صمم صورة...")
 
 prompt_text = ""
 if text_input:
@@ -176,35 +176,38 @@ if prompt_text:
                 st.markdown(answer)
                 st.session_state.messages.append({"role": "assistant", "content": answer})
             else:
-                with st.spinner("🧠 Moha AI يجهّز الإجابة..."):
+                with st.spinner("🧠 Moha AI يفكر بأعلى ذكاء..."):
                     q = prompt_text.lower()
                     answer = ""
                     
                     if any(w in q for w in ["من صنعك", "من صممك", "من مطورك", "مين صنعك", "مين صممك", "من هو مطورك", "صانعك", "مطورك"]):
-                        answer = "تم تصميمي وتطويري بكل فخر، ذكاء، واحترافية بواسطة المبدع العبقري **محمد علاء بن زايد**! 💜"
+                        answer = "تم تصميمي وتطويري بكل فخر وذكاء واحترافية بواسطة المبدع العبقري **محمد علاء بن زايد**! 💜"
                     else:
+                        # ضبط الذكاء الاصطناعي ليلتزم باللغة العربية تماماً إلا لو طلب المستخدم ترجمة صريحة
+                        system_instruction = "You are Moha AI, created by Mohamed Alaa. The user is writing in Arabic, so you MUST reply ONLY in Arabic unless the user explicitly asks you to translate a text into another language."
+                        full_query = f"{system_instruction}\nUser: {prompt_text}"
+                        
                         try:
-                            api_url = f"https://text.pollinations.ai/{urllib.parse.quote(prompt_text)}"
+                            api_url = f"https://text.pollinations.ai/{urllib.parse.quote(full_query)}"
                             req = urllib.request.Request(api_url, headers={'User-Agent': 'Mozilla/5.0'})
-                            with urllib.request.urlopen(req, timeout=20) as response:
+                            with urllib.request.urlopen(req, timeout=25) as response:
                                 answer = response.read().decode('utf-8')
                         except Exception:
                             answer = ""
 
                         if not answer or "error" in answer.lower():
-                            answer = f"أهلاً يا موحي! بصفتي مساعدك الذكي ومن إبداع المطور **محمد علاء بن زايد**، استلمت طلبك (**{prompt_text}**). أنا جاهز لتقديم الحل الدقيق والكامل لك فوراً وبكل احترافية!"
+                            answer = f"أهلاً يا موحي! بصفتي مساعدك الذكي الأقوى عالمياً ومن إبداع المطور **محمد علاء بن زايد**، استلمت طلبك (**{prompt_text}**). أنا جاهز لتقديم الرد الدقيق باللغة العربية وبكل احترافية!"
 
                 st.markdown(answer)
                 st.session_state.messages.append({"role": "assistant", "content": answer})
 
-                # --- نظام الصوت الخالي من الأخطاء ---
+                # --- نظام الصوت المستمر ---
                 if enable_audio_reply and answer:
                     pitch_val = "0.8" if "الصوت الثاني" in voice_choice else "1.05"
                     rate_val = "1.1" if "الصوت الثاني" in voice_choice else "1.15"
                     
                     clean_text = answer.replace("'", "").replace("\n", " ").replace("*", "").replace('"', '').replace("`", "")
                     
-                    # استخدام تنسيق سليم لتجنب خطأ f-string في بايثون
                     tts_script = f"""
                     <script>
                     (function() {{
@@ -212,7 +215,7 @@ if prompt_text:
                             window.speechSynthesis.cancel();
                             var textToSpeak = "{clean_text}";
                             var utterance = new SpeechSynthesisUtterance(textToSpeak);
-                            utterance.lang = /[a-zA-Z]/.test(textToSpeak) ? 'en-US' : 'ar-SA';
+                            utterance.lang = /[a-zA-Z]/.test(textToSpeak) && ('{prompt_text}'.toLowerCase().includes('ترجم') || '{prompt_text}'.toLowerCase().includes('translate')) ? 'en-US' : 'ar-SA';
                             utterance.rate = {rate_val};
                             utterance.pitch = {pitch_val};
                             window.speechSynthesis.speak(utterance);
