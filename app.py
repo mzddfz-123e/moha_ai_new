@@ -5,7 +5,7 @@ import streamlit as st
 
 # --- 1. إعدادات الصفحة والستايل (بنفسجي، أبيض، وكتابة سوداء صافية) ---
 st.set_page_config(
-    page_title="Moha AI v3.0 | محمد علاء بن زايد",
+    page_title="Moha AI v3.1 | محمد علاء بن زايد",
     page_icon="💜",
     layout="centered"
 )
@@ -40,7 +40,7 @@ st.markdown("""
         background: linear-gradient(90deg, #5a189a, #7b2cbf);
     }
     
-    /* فرض اللون البنفسجي على صندوق الكتابة وإزالة أي إطار أحمر نهائياً */
+    /* فرض اللون البنفسجي على صندوق الكتابة وإزالة أي إطار أحمر */
     div[data-baseweb="input"], div[data-baseweb="base-input"] {
         border: 2px solid #9d4edd !important;
         background-color: #ffffff !important;
@@ -53,7 +53,7 @@ st.markdown("""
     </style>
 """, unsafe_allow_html=True)
 
-st.markdown('<div class="designer-card">💜 Moha AI v3.0 (النسخة الذكية المطورة) | صانعي محمد علاء بن زايد 💜</div>', unsafe_allow_html=True)
+st.markdown('<div class="designer-card">💜 Moha AI v3.1 (النسخة الذكية المطورة) | صانعي محمد علاء بن زايد 💜</div>', unsafe_allow_html=True)
 
 if "messages" not in st.session_state:
     st.session_state.messages = []
@@ -131,7 +131,7 @@ for msg in st.session_state.messages:
         if "image_url" in msg:
             st.image(msg["image_url"], caption="💜 تم التصميم بواسطة Moha AI", use_container_width=True)
 
-# --- 5. نظام الذكاء الاصطناعي المطور الذاتي (سريع، دقيق، وبدون أخطاء API) ---
+# --- 5. نظام الذكاء الاصطناعي السريع والمستقر ---
 text_input = st.chat_input("اكتب سؤالك، اطلب تصميم صورة، أو استفسر عن أي شيء...")
 
 prompt_text = ""
@@ -170,22 +170,20 @@ if prompt_text:
                 st.markdown(answer)
                 st.session_state.messages.append({"role": "assistant", "content": answer})
             else:
-                with st.spinner("⚡ Moha AI يحلل ويفكر..."):
+                with st.spinner("⚡ Moha AI يعالج طلبك..."):
                     q = prompt_text.lower()
                     
                     # التحقق من سؤال من صنعك
                     if any(w in q for w in ["من صنعك", "من صممك", "من مطورك", "مين صنعك", "مين صممك", "من هو مطورك", "صانعك"]):
-                        answer = "تم تصميمي وتطويري بكل فخر وإبداع بواسطة العبقري **محمد علاء بن زايد**! 💜"
+                        answer = "تم تصميمي وتطويري بكل فخر بواسطة المبدع **محمد علاء بن زايد**! 💜"
                     elif any(w in q for w in ["كيف حال", "شخبارك", "ايش اخبارك", "اهلين", "مرحبا"]):
-                        answer = "الحمد لله يا موحي كل شيء تمام ومستعد لمساعدتك! أنت كيف حالك، وشنو حاب ننجز اليوم؟"
+                        answer = "الحمد لله يا موحي كل شيء تمام! أنت كيف حالك، وشنو تحب ننجز اليوم؟"
                     elif "ميلان" in q or "milan" in q:
-                        answer = "فورزا ميلان! النادي العريق دائماً في القلب يا موحي، هل تحب نناقش تشكيلة الفريق أو آخر مبارياته؟"
+                        answer = "فورزا ميلان! النادي العريق دائماً في القلب يا موحي."
                     elif "خروف" in q:
-                        answer = "معنى كلمة خروف بالإنجليزية هو **Sheep** (للحيوان البالغ) أو **Lamb** (للصغير أو لحم الضأن)."
-                    elif any(w in q for w in "برمجة" in q or "python" in q or "كود" in q or "تطوير" in q):
-                        answer = f"بخصوص طلبك البرمجي (**{prompt_text}**): بصفتي مساعدك الذكي المطور بواسطة **محمد علاء بن زايد**، أنصحك بتقسيم الكود إلى وظائف صغيرة واختبار كل جزء لوحده لضمان العمل السريع والاحترافي."
+                        answer = "معنى كلمة خروف بالإنجليزية هو **Sheep** (للبالغ) أو **Lamb** (للصغير أو لحم الضأن)."
                     else:
-                        answer = f"أهلاً يا موحي! استفسارك عـن (**{prompt_text}**) مهم جداً. بصفتي مساعدك الذكي (إصدار V3) ومن تطوير **محمد علاء بن زايد**، أنا جاهز دائماً لتوفير الإجابة الدقيقة والمفيدة لك بكل سرعة وبدون أي مشاكل!"
+                        answer = f"أهلاً يا موحي! بخصوص طلبك (**{prompt_text}**): بصفتي مساعدك الذكي المطور بواسطة **محمد علاء بن زايد**، أنا جاهز لمساعدتك فيه وتفصيله لك بكل احترافية!"
 
                 st.markdown(answer)
                 st.session_state.messages.append({"role": "assistant", "content": answer})
