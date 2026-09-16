@@ -127,13 +127,13 @@ if text_input:
             ]
             selected_kind_word = random.choice(kind_words)
 
-            # الأسئلة المتعلقة بالمصمم، الصانع، التاريخ، أو الإنشاء
-            if any(w in q_lower for w in ["من مصممك", "مين مصممك", "من صانعك", "مين صانعك", "من مطورك", "مين مطورك", "صممك", "صنعك", "تاريخك", "انشائك", "أنشأك", "من انشأك", "من صنع هذا", "من صنعك"]):
-                answer = f"تم تصميمي وتطويري بواسطة العبقري **محمد علاء بن زايد** 💜. {selected_kind_word}"
+            # الأسئلة المتعلقة بالمصمم، الصانع، تاريخ الإصدار، أو الإنشاء
+            if any(w in q_lower for w in ["من مصممك", "مين مصممك", "من صانعك", "مين صانعك", "من مطورك", "مين مطورك", "صممك", "صنعك", "تاريخك", "انشائك", "أنشأك", "من انشأك", "من صنع هذا", "من صنعك", "متى تم انشاءك", "متى تم اصدارك", "متى صنعت", "متى صممت", "اصدارك", "انشاءك"]):
+                answer = f"تم إصداري وتصميمي في عام **2026** في **ليبيا** بواسطة المبدع والعبقري **محمد علاء بن زايد** 💜. {selected_kind_word}"
             elif any(w in q_lower for w in ["كلمة حلوة لمصممك", "قول كلمة حلوة لمصممك", "كلمة لمصممك", "قول كلمة لمصممك", "كلمة حلوة لمطورك", "قول كلمة حلوة لمطورك", "مدحة لمصممك"]):
                 answer = f"إلى صانعي الحبيب **محمد علاء بن زايد**: {selected_kind_word} 💜"
             else:
-                system_instruction = "You are Moha AI, created by Mohamed Alaa. The user is writing in Arabic, so you MUST reply ONLY in Arabic unless the user explicitly asks you to translate a text into another language."
+                system_instruction = "You are Moha AI, created by Mohamed Alaa in Libya in 2026. The user is writing in Arabic, so you MUST reply ONLY in Arabic unless the user explicitly asks you to translate a text into another language. Never mention OpenAI."
                 full_query = f"{system_instruction}\nUser: {prompt_text}"
                 
                 try:
@@ -145,12 +145,12 @@ if text_input:
                     answer = ""
 
                 if not answer or "error" in answer.lower():
-                    answer = f"أهلاً يا موحي! بصفتي مساعدك الذكي ومن إبداع المطور **محمد علاء بن زايد**، استلمت طلبك (**{prompt_text}**). أنا جاهز لخدمتك بكل احترافية!"
+                    answer = f"أهلاً يا موحي! بصفتي مساعدك الذكي المصمم في ليبيا ومن إبداع المطور **محمد علاء بن زايد** في عام 2026، استلمت طلبك (**{prompt_text}**). أنا جاهز لخدمتك بكل احترافية!"
 
         st.markdown(answer)
         st.session_state.messages.append({"role": "assistant", "content": answer})
 
-        # --- نظام الصوت الفوري (يعمل حالا بدون أي تأخير أو انتظار) ---
+        # --- نظام الصوت الفوري والذكي ---
         if enable_audio_reply and answer:
             pitch_val = "0.8" if "الصوت الثاني" in voice_choice else "1.05"
             rate_val = "1.1" if "الصوت الثاني" in voice_choice else "1.15"
