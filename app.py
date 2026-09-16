@@ -120,9 +120,9 @@ if text_input:
             # بنك الكلمات الطيبة والمتنوعة بدون تكرار
             kind_words = [
                 "يا أسطورة البرمجة ويا فخر المطورين، الله يوفقك ويحفظك دائماً!",
-                "عقليتك الفذة وإبداعك المستمر هما سر تميز هذا التطبيق وروعته!",
-                "إنسان مبدع بمعرفة وعمل نادر، دايماً سابقه بخطوات يا مبدع!",
-                "تركت بصمة ذكية وعظيمة في عالم التقنية، دمت لنا فخراً ونجاحاً!",
+                "عقليتك الفذة وإبداعك المستمر هما سر تميز هذا التطبيق وروعة تصميمه!",
+                "إنسان مبدع بعقلية وعمل نادر، دايماً تسبق عصرك بخطوات يا مبدع!",
+                "تركت بصمة ذكية وعظيمة في عالم التقنية، دمت لنا فخراً ونجاحاً متميزاً!",
                 "وجودك وإبداعك هما اللذان يمنحان الحياة لكل سطر برمجي هنا!"
             ]
             selected_kind_word = random.choice(kind_words)
@@ -150,20 +150,18 @@ if text_input:
         st.markdown(answer)
         st.session_state.messages.append({"role": "assistant", "content": answer})
 
-        # --- نظام الصوت الخفيف (مع تنظيف النص تماماً من الإيموجي والرموز كي لا ينطقها) ---
+        # --- نظام الصوت الفوري (يعمل حالا بدون أي تأخير أو انتظار) ---
         if enable_audio_reply and answer:
             pitch_val = "0.8" if "الصوت الثاني" in voice_choice else "1.05"
             rate_val = "1.1" if "الصوت الثاني" in voice_choice else "1.15"
             
-            # دالة تنظيف النص لإزالة الرموز التعبيرية والإيموجي تماماً من الصوت
             import re
             clean_text = answer.replace("'", "").replace("\n", " ").replace("*", "").replace('"', '').replace("`", "")
-            # إزالة الإيموجي والرموز التعبيرية من النص المنطوق
             clean_text = re.sub(r'[\U00010000-\U0010ffff]|[\u2600-\u27bf]|[\U0001f300-\U0001f6ff]|[\U0001f900-\U0001f9ff]|💜', '', clean_text)
             
             tts_script = f"""
             <script>
-            (function() {{
+            setTimeout(function() {{
                 if ('speechSynthesis' in window) {{
                     window.speechSynthesis.cancel();
                     var textToSpeak = "{clean_text.strip()}";
@@ -173,7 +171,7 @@ if text_input:
                     utterance.pitch = {pitch_val};
                     window.speechSynthesis.speak(utterance);
                 }}
-            }})();
+            }}, 50);
             </script>
             """
             st.components.v1.html(tts_script, height=0)
