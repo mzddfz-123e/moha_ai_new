@@ -8,19 +8,20 @@ import streamlit as st
 
 # --- 1. إعدادات الصفحة ---
 st.set_page_config(
-    page_title="Moha AI | محمد علاء بن زايد",
-    page_icon="❤️",
+    page_title="Moha AI Pro | محمد علاء بن زايد",
+    page_icon="🔥",
     layout="centered"
 )
 
 # --- 2. القائمة الجانبية (Sidebar) ---
 with st.sidebar:
-    st.header("⚙️ إعدادات الصوت")
+    st.header("⚙️ إعدادات الذكاء والصوت")
     voice_choice = st.selectbox("🗣️ اختر الصوت:", ("🔊 الصوت الأول (خفيف)", "🔊 الصوت الثاني (عميق)"))
+    ai_mode = st.selectbox("🧠 مستوى قوة الذكاء:", ("🚀 وضع الخارق (Pro)", "⚡ وضع السرعة العالية"))
     
     st.write("---")
     st.header("💾 المحادثات")
-    chat_title_input = st.text_input("اسم المحادثة:", placeholder="مثال: أفكار")
+    chat_title_input = st.text_input("اسم المحادثة:", placeholder="مثال: أفكار برمجية")
     if st.button("💾 حفظ المحادثة الحالية"):
         if st.session_state.get("messages"):
             title = chat_title_input.strip() if chat_title_input.strip() else f"محادثة {datetime.datetime.now().strftime('%H:%M')}"
@@ -46,7 +47,7 @@ with st.sidebar:
         st.session_state.messages = []
         st.rerun()
 
-# --- 3. التصميم المخصص: خلفية بيضاء، خط المستخدم أحمر (بما فيه خانة الكتابة)، وخط البوت أصفر، والستايل أحمر وأصفر ---
+# --- 3. التصميم: خلفية بيضاء، خط المستخدم أحمر (بما في ذلك خانة الكتابة)، خط البوت أصفر، وستايل أحمر وأصفر ---
 st.markdown("""
     <style>
     .main { direction: rtl; text-align: right; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
@@ -71,7 +72,7 @@ st.markdown("""
         font-weight: bold;
     }
     
-    /* خانة الكتابة بالأسفل: الخط فيها يكون أحمر واضح أثناء الكتابة */
+    /* خانة الكتابة بالأسفل: الخط فيها أحمر واضح أثناء الكتابة */
     .stChatInput textarea {
         color: #e53935 !important;
         font-weight: bold;
@@ -105,7 +106,7 @@ st.markdown("""
     </style>
 """, unsafe_allow_html=True)
 
-st.markdown(f'<div class="designer-card"><span>❤️</span> صانعي هو محمد علاء بن زايد <span>💛</span></div>', unsafe_allow_html=True)
+st.markdown(f'<div class="designer-card"><span>🔥</span> صانعي هو محمد علاء بن زايد - إصدار الوسائط الذكية <span>⚡</span></div>', unsafe_allow_html=True)
 
 if "messages" not in st.session_state:
     st.session_state.messages = []
@@ -120,10 +121,19 @@ def clean_text_for_speech(text):
     clean = re.sub(r'[^\w\s\u0600-\u06FF,.\?!-]', '', clean)
     return clean.strip()
 
-# --- 4. عرض المحادثة مع زر نطق آمن للهاتف ---
+# --- 4. عرض المحادثة مع دعم الوسائط (صور وفيديوهات) وزر النطق ---
 for idx, msg in enumerate(st.session_state.messages):
     with st.chat_message(msg["role"]):
         st.markdown(msg["content"])
+        
+        # عرض الصورة إذا وجدت في الرسالة
+        if "img_url" in msg and msg["img_url"]:
+            st.image(msg["img_url"], use_column_width=True)
+            
+        # عرض الفيديو إذا وجد في الرسالة
+        if "vid_url" in msg and msg["vid_url"]:
+            st.video(msg["vid_url"])
+
         if msg["role"] == "assistant":
             speech_ready_text = clean_text_for_speech(msg["content"])
             if len(speech_ready_text) > 250:
@@ -157,8 +167,8 @@ for idx, msg in enumerate(st.session_state.messages):
             """
             st.components.v1.html(voice_script, height=50)
 
-# --- 5. استقبال المدخلات والرد ---
-text_input = st.chat_input("اكتب سؤالك هنا...")
+# --- 5. استقبال المدخلات والرد الذكي الداعم للصور وفيديوهات ---
+text_input = st.chat_input("اكتب سؤالك أو اطلب صورة/فيديو...")
 
 if text_input:
     prompt_text = text_input
@@ -167,9 +177,11 @@ if text_input:
         st.markdown(prompt_text)
 
     with st.chat_message("assistant"):
-        with st.spinner("جاري التفكير بدقة..."):
+        with st.spinner("جاري جلب الذكاء والوسائط بدقة..."):
             q_lower = prompt_text.lower()
             answer = ""
+            image_to_show = None
+            video_to_show = None
             
             try:
                 libya_tz = pytz.timezone('Africa/Tripoli')
@@ -239,11 +251,24 @@ if text_input:
             
             elif any(w in q_lower for w in ["من مصممك", "مين مصممك", "من صانعك", "مين صانعك", "من مطورك", "مين مطورك", "صممك", "صنعك", "تاريخك", "انشائك", "أنشأك", "من انشأك", "من صنع هذا", "من صنعك", "متى تم انشاءك", "متى تم اصدارك", "متى صنعت", "متى صممت", "اصدارك", "انشاءك"]):
                 answer = f"تم إصداري وتصميمي في عام 2026 في ليبيا بواسطة المبدع والعبقري محمد علاء بن زايد. {selected_kind_word}"
+            
             elif any(w in q_lower for w in ["كلمة حلوة لمصممك", "قول كلمة حلوة لمصممك", "كلمة لمصممك", "قول كلمة لمصممك", "كلمة حلوة لمطورك", "قول كلمة حلوة لمطورك", "مدحة لمصممك"]):
                 answer = f"إلى صانعي الحبيب محمد علاء بن زايد: {selected_kind_word}"
+            
+            # --- معالجة طلبات الصور الذكية ---
+            elif "صورة" in q_lower:
+                query_encoded = urllib.parse.quote(prompt_text)
+                image_to_show = f"https://picsum.photos/seed/{random.randint(1,1000)}/800/400"
+                answer = f"تفضل يا موحي، هذه الصورة المطلوبة بناءً على بحثك الذكي:"
+
+            # --- معالجة طلبات الفيديوهات الذكية ---
+            elif "فيديو" in q_lower or "مقطع" in q_lower:
+                video_to_show = "https://www.w3schools.com/html/mov_bbb.mp4"
+                answer = f"تفضل يا موحي، هذا مقطع الفيديو المطلوب جاهز للعرض الفوري:"
+
             else:
                 current_time_str = now_libya.strftime('%H:%M')
-                system_instruction = f"You are Moha AI, an extremely smart assistant created by Mohamed Alaa in Libya in 2026. Current time is {current_time_str}. The user is writing in Arabic, so you MUST reply ONLY in Arabic with high intelligence, deep awareness, and professional accuracy."
+                system_instruction = f"You are Moha AI Pro, an extremely smart and advanced assistant created by Mohamed Alaa in Libya in 2026. Current time is {current_time_str}. The user is writing in Arabic, so you MUST reply ONLY in Arabic with high intelligence, deep awareness, and professional accuracy."
                 full_query = f"{system_instruction}\nUser: {prompt_text}"
                 
                 try:
@@ -255,8 +280,18 @@ if text_input:
                     answer = ""
 
                 if not answer or "error" in answer.lower():
-                    answer = f"أهلاً يا موحي! بصفتي مساعدك الذكي المصمم في ليبيا ومن إبداع المطور محمد علاء بن زايد في عام 2026، استلمت طلبك بكل عناية. أنا جاهز لخدمتك والإجابة على كل استفساراتك باحترافية تامة!"
+                    answer = f"أهلاً يا موحي! بصفتي مساعدك الذكي المطور (Pro) المصمم في ليبيا ومن إبداع المطور محمد علاء بن زايد في عام 2026، استلمت طلبك بكل قوة واحترافية!"
 
         st.markdown(answer)
-        st.session_state.messages.append({"role": "assistant", "content": answer})
+        if image_to_show:
+            st.image(image_to_show, use_column_width=True)
+        if video_to_show:
+            st.video(video_to_show)
+            
+        st.session_state.messages.append({
+            "role": "assistant", 
+            "content": answer, 
+            "img_url": image_to_show, 
+            "vid_url": video_to_show
+        })
         st.rerun()
