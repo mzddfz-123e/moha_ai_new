@@ -47,7 +47,7 @@ with st.sidebar:
         st.session_state.messages = []
         st.rerun()
 
-# --- 3. التصميم: خلفية بيضاء، خط المستخدم أحمر (بما في ذلك خانة الكتابة)، خط البوت أصفر، وستايل أحمر وأصفر ---
+# --- 3. التصميم: خلفية بيضاء، خط المستخدم أحمر، خط البوت أصفر، وستايل أحمر وأصفر ---
 st.markdown("""
     <style>
     .main { direction: rtl; text-align: right; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
@@ -72,7 +72,7 @@ st.markdown("""
         font-weight: bold;
     }
     
-    /* خانة الكتابة بالأسفل: الخط فيها أحمر واضح أثناء الكتابة */
+    /* خانة الكتابة بالأسفل: الخط أحمر واضح */
     .stChatInput textarea {
         color: #e53935 !important;
         font-weight: bold;
@@ -106,7 +106,7 @@ st.markdown("""
     </style>
 """, unsafe_allow_html=True)
 
-st.markdown(f'<div class="designer-card"><span>🔥</span> صانعي هو محمد علاء بن زايد - إصدار الوسائط الذكية <span>⚡</span></div>', unsafe_allow_html=True)
+st.markdown(f'<div class="designer-card"><span>🔥</span> صانعي هو محمد علاء بن زايد - إرسال وعرض الصور <span>⚡</span></div>', unsafe_allow_html=True)
 
 if "messages" not in st.session_state:
     st.session_state.messages = []
@@ -121,21 +121,22 @@ def clean_text_for_speech(text):
     clean = re.sub(r'[^\w\s\u0600-\u06FF,.\?!-]', '', clean)
     return clean.strip()
 
-# --- 4. عرض المحادثة مع دعم الوسائط (صور وفيديوهات) وزر النطق ---
+# --- 4. عرض المحادثة مع إمكانية عرض الصور المرفوعة أو المولدة وزر النطق ---
 for idx, msg in enumerate(st.session_state.messages):
     with st.chat_message(msg["role"]):
-        st.markdown(msg["content"])
-        
-        # عرض الصورة إذا وجدت في الرسالة
-        if "img_url" in msg and msg["img_url"]:
-            st.image(msg["img_url"], use_column_width=True)
+        if msg.get("content"):
+            st.markdown(msg["content"])
             
-        # عرض الفيديو إذا وجد في الرسالة
+        # عرض الصورة (سواء رفعها المستخدم أو جابها البوت)
+        if "img_data" in msg and msg["img_data"]:
+            st.image(msg["img_data"], use_column_width=True)
+            
+        # عرض الفيديو إذا وجد
         if "vid_url" in msg and msg["vid_url"]:
             st.video(msg["vid_url"])
 
         if msg["role"] == "assistant":
-            speech_ready_text = clean_text_for_speech(msg["content"])
+            speech_ready_text = clean_text_for_speech(msg.get("content", ""))
             if len(speech_ready_text) > 250:
                 speech_ready_text = speech_ready_text[:250]
                 
@@ -167,8 +168,29 @@ for idx, msg in enumerate(st.session_state.messages):
             """
             st.components.v1.html(voice_script, height=50)
 
-# --- 5. استقبال المدخلات والرد الذكي الداعم للصور وفيديوهات ---
-text_input = st.chat_input("اكتب سؤالك أو اطلب صورة/فيديو...")
+# --- 5. زر لرفع الصور من جهاز المستخدم ---
+uploaded_file = st.file_uploader("📤 ارفع صورة من هاتفك أو جهازك:", type=["png", "jpg", "jpeg"])
+
+# --- 6. استقبال المدخلات والرد الذكي ---
+text_input = st.chat_input("اكتب رسالتك أو اطلب صورة/فيديو...")
+
+# معالجة الصورة المرفوعة من المستخدم مباشرة
+if uploaded_file is not None:
+    bytes_data = uploaded_file.getvalue()
+    st.session_state.messages.append({
+        "role": "user", 
+        "content": "قمت برفع هذه الصورة:", 
+        "img_data": bytes_data
+    })
+    
+    # رد تلقائي من البوت على الصورة المرفوعة
+    bot_reply = "وصلت الصورة يا موحي! صورة فخمة وواضحة جداً، هل تحب أساعدك بشيء بخصوصها؟"
+    st.session_state.messages.append({
+        "role": "assistant", 
+        "content": bot_reply, 
+        "img_data": None
+    })
+    st.rerun()
 
 if text_input:
     prompt_text = text_input
@@ -198,7 +220,6 @@ if text_input:
             ]
             selected_kind_word = random.choice(kind_words)
 
-            # --- التوقيت العالمي والمحلي المتطور ---
             if any(w in q_lower for w in ["الساعة", "الوقت", "كم الساعة", "وقت", "التوقيت", "ساعة"]):
                 target_tz = libya_tz if 'libya_tz' in locals() else None
                 country_name = "ليبيا"
@@ -255,20 +276,17 @@ if text_input:
             elif any(w in q_lower for w in ["كلمة حلوة لمصممك", "قول كلمة حلوة لمصممك", "كلمة لمصممك", "قول كلمة لمصممك", "كلمة حلوة لمطورك", "قول كلمة حلوة لمطورك", "مدحة لمصممك"]):
                 answer = f"إلى صانعي الحبيب محمد علاء بن زايد: {selected_kind_word}"
             
-            # --- معالجة طلبات الصور الذكية ---
             elif "صورة" in q_lower:
-                query_encoded = urllib.parse.quote(prompt_text)
                 image_to_show = f"https://picsum.photos/seed/{random.randint(1,1000)}/800/400"
-                answer = f"تفضل يا موحي، هذه الصورة المطلوبة بناءً على بحثك الذكي:"
+                answer = f"تفضل يا موحي، هذه الصورة المطلوبة:"
 
-            # --- معالجة طلبات الفيديوهات الذكية ---
             elif "فيديو" in q_lower or "مقطع" in q_lower:
                 video_to_show = "https://www.w3schools.com/html/mov_bbb.mp4"
-                answer = f"تفضل يا موحي، هذا مقطع الفيديو المطلوب جاهز للعرض الفوري:"
+                answer = f"تفضل يا موحي، هذا مقطع الفيديو المطلوب:"
 
             else:
                 current_time_str = now_libya.strftime('%H:%M')
-                system_instruction = f"You are Moha AI Pro, an extremely smart and advanced assistant created by Mohamed Alaa in Libya in 2026. Current time is {current_time_str}. The user is writing in Arabic, so you MUST reply ONLY in Arabic with high intelligence, deep awareness, and professional accuracy."
+                system_instruction = f"You are Moha AI Pro, an extremely smart assistant created by Mohamed Alaa in Libya in 2026. Current time is {current_time_str}. The user is writing in Arabic, so you MUST reply ONLY in Arabic with high intelligence and professional accuracy."
                 full_query = f"{system_instruction}\nUser: {prompt_text}"
                 
                 try:
@@ -280,7 +298,7 @@ if text_input:
                     answer = ""
 
                 if not answer or "error" in answer.lower():
-                    answer = f"أهلاً يا موحي! بصفتي مساعدك الذكي المطور (Pro) المصمم في ليبيا ومن إبداع المطور محمد علاء بن زايد في عام 2026، استلمت طلبك بكل قوة واحترافية!"
+                    answer = f"أهلاً يا موحي! بصفتي مساعدك الذكي المطور في ليبيا ومن إبداع المطور محمد علاء بن زايد في عام 2026، استلمت طلبك بكل قوة واحترانية!"
 
         st.markdown(answer)
         if image_to_show:
@@ -291,7 +309,7 @@ if text_input:
         st.session_state.messages.append({
             "role": "assistant", 
             "content": answer, 
-            "img_url": image_to_show, 
+            "img_data": image_to_show, 
             "vid_url": video_to_show
         })
         st.rerun()
