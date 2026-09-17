@@ -15,9 +15,8 @@ st.set_page_config(
 
 # --- 2. القائمة الجانبية (Sidebar) ---
 with st.sidebar:
-    st.header("⚙️ إعدادات الذكاء والصوت")
+    st.header("⚙️ إعدادات الصوت")
     voice_choice = st.selectbox("🗣️ اختر الصوت:", ("🔊 الصوت الأول (خفيف)", "🔊 الصوت الثاني (عميق)"))
-    ai_mode = st.selectbox("🧠 مستوى قوة الذكاء:", ("🚀 وضع الخارق (Pro)", "⚡ وضع السرعة العالية"))
     
     st.write("---")
     st.header("💾 المحادثات")
@@ -106,7 +105,7 @@ st.markdown("""
     </style>
 """, unsafe_allow_html=True)
 
-st.markdown(f'<div class="designer-card"><span>🔥</span> صانعي هو محمد علاء بن زايد - إرسال وعرض الصور <span>⚡</span></div>', unsafe_allow_html=True)
+st.markdown(f'<div class="designer-card"><span>🔥</span> صانعي هو محمد علاء بن زايد <span>⚡</span></div>', unsafe_allow_html=True)
 
 if "messages" not in st.session_state:
     st.session_state.messages = []
@@ -121,18 +120,19 @@ def clean_text_for_speech(text):
     clean = re.sub(r'[^\w\s\u0600-\u06FF,.\?!-]', '', clean)
     return clean.strip()
 
-# --- 4. عرض المحادثة مع إمكانية عرض الصور المرفوعة أو المولدة وزر النطق ---
+# --- 4. عرض المحادثة بشكل آمن ---
 for idx, msg in enumerate(st.session_state.messages):
     with st.chat_message(msg["role"]):
         if msg.get("content"):
             st.markdown(msg["content"])
             
-        # عرض الصورة (سواء رفعها المستخدم أو جابها البوت)
-        if "img_data" in msg and msg["img_data"]:
-            st.image(msg["img_data"], use_column_width=True)
+        if msg.get("img_data"):
+            try:
+                st.image(msg["img_data"], use_container_width=True)
+            except Exception:
+                pass
             
-        # عرض الفيديو إذا وجد
-        if "vid_url" in msg and msg["vid_url"]:
+        if msg.get("vid_url"):
             st.video(msg["vid_url"])
 
         if msg["role"] == "assistant":
@@ -171,35 +171,34 @@ for idx, msg in enumerate(st.session_state.messages):
 # --- 5. زر لرفع الصور من جهاز المستخدم ---
 uploaded_file = st.file_uploader("📤 ارفع صورة من هاتفك أو جهازك:", type=["png", "jpg", "jpeg"])
 
+if uploaded_file is not None:
+    file_bytes = uploaded_file.getvalue()
+    if not st.session_state.messages or st.session_state.messages[-1].get("img_data") != file_bytes:
+        st.session_state.messages.append({
+            "role": "user", 
+            "content": "قمت برفع هذه الصورة:", 
+            "img_data": file_bytes
+        })
+        bot_reply = "وصلت الصورة يا موحي! صورة فخمة وواضحة جداً، هل تحب أساعدك بشيء بخصوصها؟"
+        st.session_state.messages.append({
+            "role": "assistant", 
+            "content": bot_reply, 
+            "img_data": None
+        })
+        st.rerun()
+
 # --- 6. استقبال المدخلات والرد الذكي ---
 text_input = st.chat_input("اكتب رسالتك أو اطلب صورة/فيديو...")
 
-# معالجة الصورة المرفوعة من المستخدم مباشرة
-if uploaded_file is not None:
-    bytes_data = uploaded_file.getvalue()
-    st.session_state.messages.append({
-        "role": "user", 
-        "content": "قمت برفع هذه الصورة:", 
-        "img_data": bytes_data
-    })
-    
-    # رد تلقائي من البوت على الصورة المرفوعة
-    bot_reply = "وصلت الصورة يا موحي! صورة فخمة وواضحة جداً، هل تحب أساعدك بشيء بخصوصها؟"
-    st.session_state.messages.append({
-        "role": "assistant", 
-        "content": bot_reply, 
-        "img_data": None
-    })
-    st.rerun()
-
 if text_input:
     prompt_text = text_input
-    st.session_state.messages.append({"role": "user", "content": prompt_text})
+    st.session_state.messages.append({"role": "user", "content": prompt_text, "img_data": None})
+
     with st.chat_message("user"):
         st.markdown(prompt_text)
 
     with st.chat_message("assistant"):
-        with st.spinner("جاري جلب الذكاء والوسائط بدقة..."):
+        with st.spinner("جاري جلب الرد بدقة..."):
             q_lower = prompt_text.lower()
             answer = ""
             image_to_show = None
@@ -223,37 +222,16 @@ if text_input:
             if any(w in q_lower for w in ["الساعة", "الوقت", "كم الساعة", "وقت", "التوقيت", "ساعة"]):
                 target_tz = libya_tz if 'libya_tz' in locals() else None
                 country_name = "ليبيا"
-
+                
                 if any(c in q_lower for c in ["مصر", "القاهرة"]):
                     target_tz = pytz.timezone('Africa/Cairo')
                     country_name = "مصر"
                 elif any(c in q_lower for c in ["السعودية", "مكة", "الرياض"]):
                     target_tz = pytz.timezone('Asia/Riyadh')
                     country_name = "السعودية"
-                elif any(c in q_lower for c in ["الإمارات", "دبي", "أبوظبي"]):
+                elif any(c in q_lower for c in ["الإمارات", "دبي"]):
                     target_tz = pytz.timezone('Asia/Dubai')
                     country_name = "الإمارات"
-                elif any(c in q_lower for c in ["قطر", "الدوحة"]):
-                    target_tz = pytz.timezone('Asia/Qatar')
-                    country_name = "قطر"
-                elif any(c in q_lower for c in ["الكويت"]):
-                    target_tz = pytz.timezone('Asia/Kuwait')
-                    country_name = "الكويت"
-                elif any(c in q_lower for c in ["الجزائر"]):
-                    target_tz = pytz.timezone('Africa/Algiers')
-                    country_name = "الجزائر"
-                elif any(c in q_lower for c in ["تونس"]):
-                    target_tz = pytz.timezone('Africa/Tunis')
-                    country_name = "تونس"
-                elif any(c in q_lower for c in ["المغرب", "الرباط"]):
-                    target_tz = pytz.timezone('Africa/Casablanca')
-                    country_name = "المغرب"
-                elif any(c in q_lower for c in ["لندن", "بريطانيا"]):
-                    target_tz = pytz.timezone('Europe/London')
-                    country_name = "لندن"
-                elif any(c in q_lower for c in ["امريكا", "نيويورك"]):
-                    target_tz = pytz.timezone('America/New_York')
-                    country_name = "نيويورك"
 
                 try:
                     t_now = datetime.datetime.now(target_tz)
@@ -263,18 +241,14 @@ if text_input:
                 hour_12 = t_now.strftime('%I').lstrip('0')
                 minute_str = t_now.strftime('%M')
                 period = "مساءً" if int(t_now.strftime('%H')) >= 12 else "صباحاً"
-                
                 answer = f"الساعة الآن في {country_name} هي الساعة {hour_12} و {minute_str} دقيقة {period} يا موحي."
 
-            elif any(w in q_lower for w in ["التاريخ", "اليوم كام", "اي يوم", "الامس"]):
+            elif any(w in q_lower for w in ["التاريخ", "اليوم كام", "اي يوم"]):
                 current_date_str = now_libya.strftime('%Y-%m-%d')
                 answer = f"تاريخ اليوم هو {current_date_str} يا موحي."
             
-            elif any(w in q_lower for w in ["من مصممك", "مين مصممك", "من صانعك", "مين صانعك", "من مطورك", "مين مطورك", "صممك", "صنعك", "تاريخك", "انشائك", "أنشأك", "من انشأك", "من صنع هذا", "من صنعك", "متى تم انشاءك", "متى تم اصدارك", "متى صنعت", "متى صممت", "اصدارك", "انشاءك"]):
+            elif any(w in q_lower for w in ["من مصممك", "مين مصممك", "من صانعك", "من مطورك", "صممك", "صنعك"]):
                 answer = f"تم إصداري وتصميمي في عام 2026 في ليبيا بواسطة المبدع والعبقري محمد علاء بن زايد. {selected_kind_word}"
-            
-            elif any(w in q_lower for w in ["كلمة حلوة لمصممك", "قول كلمة حلوة لمصممك", "كلمة لمصممك", "قول كلمة لمصممك", "كلمة حلوة لمطورك", "قول كلمة حلوة لمطورك", "مدحة لمصممك"]):
-                answer = f"إلى صانعي الحبيب محمد علاء بن زايد: {selected_kind_word}"
             
             elif "صورة" in q_lower:
                 image_to_show = f"https://picsum.photos/seed/{random.randint(1,1000)}/800/400"
@@ -286,7 +260,7 @@ if text_input:
 
             else:
                 current_time_str = now_libya.strftime('%H:%M')
-                system_instruction = f"You are Moha AI Pro, an extremely smart assistant created by Mohamed Alaa in Libya in 2026. Current time is {current_time_str}. The user is writing in Arabic, so you MUST reply ONLY in Arabic with high intelligence and professional accuracy."
+                system_instruction = f"You are Moha AI, an extremely smart assistant created by Mohamed Alaa in Libya in 2026. Current time is {current_time_str}. The user is writing in Arabic, so you MUST reply ONLY in Arabic with high intelligence."
                 full_query = f"{system_instruction}\nUser: {prompt_text}"
                 
                 try:
@@ -298,11 +272,11 @@ if text_input:
                     answer = ""
 
                 if not answer or "error" in answer.lower():
-                    answer = f"أهلاً يا موحي! بصفتي مساعدك الذكي المطور في ليبيا ومن إبداع المطور محمد علاء بن زايد في عام 2026، استلمت طلبك بكل قوة واحترانية!"
+                    answer = f"أهلاً يا موحي! بصفتي مساعدك الذكي في ليبيا ومن إبداع المطور محمد علاء بن زايد في عام 2026، استلمت طلبك بكل قوة!"
 
         st.markdown(answer)
         if image_to_show:
-            st.image(image_to_show, use_column_width=True)
+            st.image(image_to_show, use_container_width=True)
         if video_to_show:
             st.video(video_to_show)
             
