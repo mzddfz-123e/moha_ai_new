@@ -44,6 +44,7 @@ with st.sidebar:
     st.write("---")
     if st.button("🗑️ محادثة جديدة"):
         st.session_state.messages = []
+        st.session_state.last_uploaded_file_id = None
         st.rerun()
 
 # --- 3. التصميم: خلفية بيضاء، خط المستخدم أحمر، خط البوت أصفر، وستايل أحمر وأصفر ---
@@ -113,6 +114,9 @@ if "messages" not in st.session_state:
 if "saved_chats" not in st.session_state:
     st.session_state.saved_chats = {}
 
+if "last_uploaded_file_id" not in st.session_state:
+    st.session_state.last_uploaded_file_id = None
+
 # --- دالة تنظيف النص للنطق الآمن ---
 import re
 def clean_text_for_speech(text):
@@ -168,12 +172,15 @@ for idx, msg in enumerate(st.session_state.messages):
             """
             st.components.v1.html(voice_script, height=50)
 
-# --- 5. زر لرفع الصور من جهاز المستخدم ---
+# --- 5. زر لرفع الصور بضمان عدم التكرار ---
 uploaded_file = st.file_uploader("📤 ارفع صورة من هاتفك أو جهازك:", type=["png", "jpg", "jpeg"])
 
 if uploaded_file is not None:
-    file_bytes = uploaded_file.getvalue()
-    if not st.session_state.messages or st.session_state.messages[-1].get("img_data") != file_bytes:
+    # نتحقق من معرف الملف (file_id) لضمان عدم تكرار إرساله نهائياً
+    if st.session_state.last_uploaded_file_id != uploaded_file.file_id:
+        st.session_state.last_uploaded_file_id = uploaded_file.file_id
+        file_bytes = uploaded_file.getvalue()
+        
         st.session_state.messages.append({
             "role": "user", 
             "content": "قمت برفع هذه الصورة:", 
