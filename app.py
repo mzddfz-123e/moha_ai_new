@@ -120,20 +120,11 @@ def clean_text_for_speech(text):
     clean = re.sub(r'[^\w\s\u0600-\u06FF,.\?!-]', '', clean)
     return clean.strip()
 
-# --- 4. عرض المحادثة والذاكرة الدائمة للصور والرسائل ---
+# --- 4. عرض المحادثة النصية ---
 for idx, msg in enumerate(st.session_state.messages):
     with st.chat_message(msg["role"]):
         if msg.get("content"):
             st.markdown(msg["content"])
-            
-        if msg.get("img_data"):
-            try:
-                st.image(msg["img_data"], use_container_width=True)
-            except Exception:
-                pass
-            
-        if msg.get("vid_url"):
-            st.video(msg["vid_url"])
 
         if msg["role"] == "assistant":
             speech_ready_text = clean_text_for_speech(msg.get("content", ""))
@@ -168,44 +159,12 @@ for idx, msg in enumerate(st.session_state.messages):
             """
             st.components.v1.html(voice_script, height=50)
 
-# --- 5. قسم رفع الصور الذكي مع إمكانية كتابة تعليق تحتها ---
-st.write("---")
-st.subheader("📸 رفع صورة وشرحها بذكاء:")
-uploaded_file = st.file_uploader("اختر صورة من هاتفك أو جهازك:", type=["png", "jpg", "jpeg"], key="image_uploader_box")
-
-image_caption = st.text_input("💬 اكتب سؤالك أو طلبك لشرح الصورة هنا:", placeholder="مثال: اشرح لي هذه الصورة بالتفصيل يا موحي...")
-
-if st.button("🚀 إرسال الصورة مع السؤال"):
-    if uploaded_file is not None:
-        file_bytes = uploaded_file.getvalue()
-        user_text = image_caption.strip() if image_caption.strip() else "قمت برفع هذه الصورة، يرجى شرحها:"
-        
-        # حفظ رسالة المستخدم والصورة في الذاكرة
-        st.session_state.messages.append({
-            "role": "user", 
-            "content": user_text, 
-            "img_data": file_bytes
-        })
-        
-        # رد ذكي شامل لشرح الصورة
-        bot_reply = f"يا هلا يا موحي! استلمت صورتك وفحصتها بدقة. بالنسبة لقولك ({user_text})، هذه الصورة تحتوي على تفاصيل واضحة وممتازة، وأنا جاهز أساعدك وأشرح لك كل ركن فيها بكل ذكاء واحترافية!"
-        
-        st.session_state.messages.append({
-            "role": "assistant", 
-            "content": bot_reply, 
-            "img_data": None,
-            "vid_url": None
-        })
-        st.rerun()
-    else:
-        st.warning("الرجاء اختيار صورة أولاً يا أسطورة!")
-
-# --- 6. استقبال المحادثات النصية العادية والرد الذكي ---
-text_input = st.chat_input("اكتب رسالتك العادية هنا...")
+# --- 5. استقبال المدخلات النصية والرد الذكي ---
+text_input = st.chat_input("اكتب رسالتك هنا...")
 
 if text_input:
     prompt_text = text_input
-    st.session_state.messages.append({"role": "user", "content": prompt_text, "img_data": None})
+    st.session_state.messages.append({"role": "user", "content": prompt_text})
 
     with st.chat_message("user"):
         st.markdown(prompt_text)
@@ -214,8 +173,6 @@ if text_input:
         with st.spinner("جاري جلب الرد بدقة..."):
             q_lower = prompt_text.lower()
             answer = ""
-            image_to_show = None
-            video_to_show = None
             
             try:
                 libya_tz = pytz.timezone('Africa/Tripoli')
@@ -263,14 +220,6 @@ if text_input:
             elif any(w in q_lower for w in ["من مصممك", "مين مصممك", "من صانعك", "من مطورك", "صممك", "صنعك"]):
                 answer = f"تم إصداري وتصميمي في عام 2026 في ليبيا بواسطة المبدع والعبقري محمد علاء بن زايد. {selected_kind_word}"
             
-            elif "صورة" in q_lower:
-                image_to_show = f"https://picsum.photos/seed/{random.randint(1,1000)}/800/400"
-                answer = f"تفضل يا موحي، هذه الصورة المطلوبة:"
-
-            elif "فيديو" in q_lower or "مقطع" in q_lower:
-                video_to_show = "https://www.w3schools.com/html/mov_bbb.mp4"
-                answer = f"تفضل يا موحي، هذا مقطع الفيديو المطلوب:"
-
             else:
                 current_time_str = now_libya.strftime('%H:%M')
                 system_instruction = f"You are Moha AI, an extremely smart assistant created by Mohamed Alaa in Libya in 2026. Current time is {current_time_str}. The user is writing in Arabic, so you MUST reply ONLY in Arabic with high intelligence."
@@ -288,15 +237,8 @@ if text_input:
                     answer = f"أهلاً يا موحي! بصفتي مساعدك الذكي في ليبيا ومن إبداع المطور محمد علاء بن زايد في عام 2026، استلمت طلبك بكل قوة!"
 
         st.markdown(answer)
-        if image_to_show:
-            st.image(image_to_show, use_container_width=True)
-        if video_to_show:
-            st.video(video_to_show)
-            
         st.session_state.messages.append({
             "role": "assistant", 
-            "content": answer, 
-            "img_data": image_to_show, 
-            "vid_url": video_to_show
+            "content": answer
         })
         st.rerun()
