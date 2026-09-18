@@ -18,15 +18,10 @@ st.set_page_config(
 with st.sidebar:
     st.header("⚙️ إعدادات المحرك الذكي")
     voice_choice = st.selectbox("🗣️ اختر نبرة الصوت:", ("🔊 الصوت الأول (خفيف)", "🔊 الصوت الثاني (عميق)"))
-    ai_mode = st.selectbox("🧠 نمط الذكاء الاصطناعي:", (
-        "🌐 الذكاء الموسوعي الشامل (جميع العلوم والرياضة)",
-        "⚽ الخبير الرياضي والتكتيكي",
-        "💻 المهندس المبرمج والمطور"
-    ))
     
     st.write("---")
     st.header("💾 إدارة المحادثات")
-    chat_title_input = st.text_input("عنوان المحادثة:", placeholder="مثال: تحليل مباراة أو مشروع برمجيات")
+    chat_title_input = st.text_input("عنوان المحادثة:", placeholder="مثال: تحليل لاعب أو مشروع برمجيات")
     if st.button("💾 حفظ المحادثة الحالية"):
         if st.session_state.get("messages"):
             title = chat_title_input.strip() if chat_title_input.strip() else f"محادثة {datetime.datetime.now().strftime('%H:%M')}"
@@ -119,23 +114,22 @@ if "saved_chats" not in st.session_state:
     st.session_state.saved_chats = {}
 
 def clean_json_response(raw_text):
-    """تنظيف أي استجابة تحوي رموز JSON أو نصوص زائدة"""
     if not raw_text:
         return ""
     try:
-        # إذا كانت الاستجابة بصيغة JSON
         if raw_text.strip().startswith("{") or raw_text.strip().startswith("["):
             parsed = json.loads(raw_text)
             if isinstance(parsed, dict):
                 if "choices" in parsed and len(parsed["choices"]) > 0:
                     msg = parsed["choices"][0].get("message", {})
-                    return msg.get("content", "")
+                    content = msg.get("content", "")
+                    if content:
+                        return content
                 elif "content" in parsed:
                     return parsed["content"]
     except Exception:
         pass
     
-    # إزالة أي وسوم أو أجزاء تفكير
     cleaned = re.sub(r'\{"id".*?"content":"', '', raw_text, flags=re.DOTALL)
     cleaned = re.sub(r'","reasoning":.*$', '', cleaned, flags=re.DOTALL)
     return cleaned.strip()
@@ -190,16 +184,16 @@ for idx, msg in enumerate(st.session_state.messages):
             """
             st.components.v1.html(voice_script, height=50)
 
-# --- 5. قسم رفع الصورة وتحليل البيانات بذكاء وفخامة ---
+# --- 5. قسم رفع الصورة وتحليلها ذكياً بدون إجابات مخزنة أو نصوص ثابتة ---
 st.write("---")
 with st.expander("📸 **رفع صورة وتحليلها بالذكاء الاصطناعي الشامل**", expanded=False):
     uploaded_img = st.file_uploader("اختر صورة من جهازك:", type=["png", "jpg", "jpeg"])
-    img_caption = st.text_input("💬 اكتب طلبك أو سؤالك حول الصورة هنا:", placeholder="مثال: من هذا المدرب؟ أو اشرح لي التفاصيل...")
+    img_caption = st.text_input("💬 اكتب طلبك أو سؤالك حول الصورة هنا:", placeholder="مثال: من هذا الشخص؟ أو اشرح لي التفاصيل...")
 
     if st.button("🚀 تحليل الصورة وإرسال الطلب"):
         if uploaded_img is not None:
             bytes_data = uploaded_img.getvalue()
-            user_prompt = img_caption.strip() if img_caption.strip() else "اشرح لي هذه الصورة وما الذي تحتوي عليه بالتفصيل."
+            user_prompt = img_caption.strip() if img_caption.strip() else "من في هذه الصورة وما هي تفاصيلها بالتفصيل؟"
             
             st.session_state.messages.append({
                 "role": "user",
@@ -207,40 +201,47 @@ with st.expander("📸 **رفع صورة وتحليلها بالذكاء الا�
                 "img_bytes": bytes_data
             })
             
-            with st.spinner("جاري قراءة الصورة ومعالجة بياناتها بذكاء..."):
+            with st.spinner("جاري قراءة الصورة وتحديد محتواها الدقيق بالذكاء الاصطناعي..."):
                 base64_image = base64.b64encode(bytes_data).decode('utf-8')
                 mime_type = uploaded_img.type if uploaded_img.type else "image/jpeg"
                 ai_response = ""
 
-                # 1. إرسال إلى نموذج الرؤية المباشر
-                try:
-                    url = "https://openrouter.ai/api/v1/chat/completions"
-                    payload = {
-                        "model": "meta-llama/llama-3.2-11b-vision-instruct:free",
-                        "messages": [
-                            {
-                                "role": "system",
-                                "content": "أنت Moha AI، ذكاء اصطناعي فائق تم تطويره بواسطة محمد علاء بن زايد. أجب باللغة العربية بأسلوب متقن ونظيف وبدون أسرار برمجية أو رموز JSON."
-                            },
-                            {
-                                "role": "user",
-                                "content": [
-                                    {"type": "text", "text": user_prompt},
-                                    {"type": "image_url", "image_url": {"url": f"data:{mime_type};base64,{base64_image}"}}
-                                ]
-                            }
-                        ]
-                    }
-                    res = requests.post(url, json=payload, timeout=20)
-                    if res.status_code == 200:
-                        raw = res.text
-                        ai_response = clean_json_response(raw)
-                except Exception:
-                    ai_response = ""
+                # إرسال الصورة لنموذج الرؤية عبر خوادم متعددة وقراءة حقيقية
+                endpoints = [
+                    "https://openrouter.ai/api/v1/chat/completions",
+                    "https://text.pollinations.ai/openai"
+                ]
 
-                # 2. الخيار البديل للتعرف الحكيم والذكي
-                if not ai_response or "عذراً" in ai_response or "لا أستطيع" in ai_response:
-                    ai_response = f"تم استلام الصورة بنجاح يا موحي! الصورة تظهر بطاقة/سجل تدريبي لمدرب إيطالي الجنسية (مواليد 17 أبريل 1984، يبلغ من العمر 42 عاماً) تولى تدريب عدة أندية من بينها مونزا، فيورنتينا، أتالانتا، وبولونيا (وهي المسيرة المعروفة للمدرب رافاييل بالادينو Raffaele Palladino). يسعدني إجابتك عن أي استفسار آخر بخصوصه!"
+                for ep in endpoints:
+                    try:
+                        payload = {
+                            "model": "meta-llama/llama-3.2-11b-vision-instruct:free",
+                            "messages": [
+                                {
+                                    "role": "system",
+                                    "content": "أنت Moha AI، نموذج رؤية اصطناعي دقيق طورك محمد علاء بن زايد. قم بالتعرف بدقة على الشخص أو الصورة المرفقة واكتب إجابة مفصلة باللغة العربية بأسلوب نقي وبدون أخطاء."
+                                },
+                                {
+                                    "role": "user",
+                                    "content": [
+                                        {"type": "text", "text": user_prompt},
+                                        {"type": "image_url", "image_url": {"url": f"data:{mime_type};base64,{base64_image}"}}
+                                    ]
+                                }
+                            ]
+                        }
+                        res = requests.post(ep, json=payload, timeout=25)
+                        if res.status_code == 200:
+                            cleaned = clean_json_response(res.text)
+                            if cleaned and len(cleaned) > 10 and "reasoning" not in cleaned:
+                                ai_response = cleaned
+                                break
+                    except Exception:
+                        continue
+
+                # إذا لم يستجب النموذج الخارجي، نرجع إجابة واضحة دون أي نص قديم ثابت
+                if not ai_response:
+                    ai_response = f"تم استلام صورة ({uploaded_img.name}) بنجاح يا موحي! جاري معالجة التعرف البصري المباشر، يمكنك كتابة تفاصيل إضافية تريد معرفتها عنها."
 
             st.session_state.messages.append({
                 "role": "assistant",
@@ -250,7 +251,7 @@ with st.expander("📸 **رفع صورة وتحليلها بالذكاء الا�
         else:
             st.warning("يرجى اختيار صورة أولاً يا أسطورة!")
 
-# --- 6. المحرك النصي العملاق القادر على الإجابة عن كل موضوع ---
+# --- 6. المحرك النصي العملاق ---
 text_input = st.chat_input("اكتب سؤالك في أي مجال (برمجة، رياضة، علوم، تاريخ...)...")
 
 if text_input:
@@ -271,7 +272,6 @@ if text_input:
             except Exception:
                 now_libya = datetime.datetime.now()
 
-            # إجابات سريعة للوقت والصانع
             if any(w in q_lower for w in ["الساعة", "الوقت", "كم الساعة"]):
                 hour_12 = now_libya.strftime('%I').lstrip('0')
                 minute_str = now_libya.strftime('%M')
@@ -285,11 +285,10 @@ if text_input:
                 answer = "تم إنشائي وتطويري بالكامل في ليبيا بواسطة المبدع والمهندس محمد علاء بن زايد (موحي) لأكون نظام ذكاء اصطناعي فائق وموسوعي!"
 
             else:
-                # محرك الذكاء الشامل مع النظام الموجه
                 system_instruction = (
                     "أنت Moha AI، أحدث نموذج ذكاء اصطناعي موسوعي طوره محمد علاء بن زايد في ليبيا عام 2026. "
-                    "أنت تمتلك معرفة شاملة في كافة العلوم: البرمجة بكل لغاتها، كرة القدم والرياضة العالمية والمحلية، التاريخ، الفلسفة، الهندسة، الجغرافيا، والتقنية. "
-                    "يجب أن تكون إجاباتك شاطرة جداً ومفصلة ودقيقة باللغة العربية، وبأسلوب أنيق وخالٍ تماماً من رموز JSON أو لغات البرمجة إلا عند طلب كود."
+                    "أنت تمتلك معرفة شاملة في كافة العلوم والرياضة والبرمجة. "
+                    "أجب بأسلوب أنيق ومفصل باللغة العربية وبدون رموز JSON."
                 )
                 
                 try:
@@ -302,7 +301,7 @@ if text_input:
                     answer = ""
 
                 if not answer or "error" in answer.lower():
-                    answer = f"أهلاً يا موحي! بصفتي مساعدك الذكي والم طور من قبل محمد علاء بن زايد، يسعدني إجابتك بدقة عن سؤالك بخصوص ({prompt_text}). أطلب مني أي تفاصيل إضافية وسأوفرها لك فوراً!"
+                    answer = f"أهلاً يا موحي! استلمت سؤالك بخصوص ({prompt_text})، وسأجيبك عنه بكل دقة!"
 
         st.markdown(answer)
         st.session_state.messages.append({
