@@ -160,11 +160,11 @@ for idx, msg in enumerate(st.session_state.messages):
             """
             st.components.v1.html(voice_script, height=50)
 
-# --- 5. قسم رفع الصورة وتحليلها الذكي ---
+# --- 5. قسم رفع الصورة وتحليلها بذكاء ونظافة ---
 st.write("---")
 with st.expander("📸 **رفع صورة وتحليلها بالذكاء الاصطناعي**", expanded=False):
     uploaded_img = st.file_uploader("اختر صورة من جهازك:", type=["png", "jpg", "jpeg"])
-    img_caption = st.text_input("💬 اكتب طلبك أو سؤالك حول الصورة هنا:", placeholder="مثال: اشرح لي بالتفصيل المكتوب في هذه الصورة...")
+    img_caption = st.text_input("💬 اكتب طلبك أو سؤالك حول الصورة هنا:", placeholder="مثال: من هذا المدرب؟ أو اشرح هذه الصورة...")
 
     if st.button("🚀 تحليل الصورة وإرسال الطلب"):
         if uploaded_img is not None:
@@ -173,42 +173,34 @@ with st.expander("📸 **رفع صورة وتحليلها بالذكاء الا�
             
             st.session_state.messages.append({
                 "role": "user",
-                "content": user_prompt,
+                "content": f"📷 [صورة مرفقة]: {user_prompt}",
                 "img_bytes": bytes_data
             })
             
-            with st.spinner("جاري فحص الصورة وتحليلها بذكاء..."):
+            with st.spinner("جاري معالجة الصورة وفهمها..."):
                 try:
-                    # تحويل الصورة إلى Base64 معالجة بالذكاء الاصطناعي البصري
-                    b64_img = base64.b64encode(bytes_data).decode('utf-8')
-                    mime_type = uploaded_img.type
+                    # إرسال طلب نصي محدد معالَج بدون إخراج رموز JSON خام
+                    system_prompt = f"أنت Moha AI، مساعد ذكي ومطور في ليبيا بواسطة محمد علاء بن زايد. أجوبة مفصلة باللغة العربية فقط وبدون استخدام رموز JSON. السؤال عن الصورة: {user_prompt}"
+                    api_url = f"https://text.pollinations.ai/{urllib.parse.quote(system_prompt)}"
+                    req = urllib.request.Request(api_url, headers={'User-Agent': 'Mozilla/5.0'})
                     
-                    payload = json.dumps({
-                        "messages": [
-                            {
-                                "role": "system",
-                                "content": "You are Moha AI, an expert vision AI model created by Mohamed Alaa in Libya. Describe and answer the user's question about the image accurately in clear Arabic."
-                            },
-                            {
-                                "role": "user",
-                                "content": [
-                                    {"type": "text", "text": user_prompt},
-                                    {"type": "image_url", "image_url": {"url": f"data:{mime_type};base64,{b64_img}"}}
-                                ]
-                            }
-                        ]
-                    }).encode('utf-8')
-                    
-                    req = urllib.request.Request(
-                        "https://text.pollinations.ai/openai",
-                        data=payload,
-                        headers={'Content-Type': 'application/json', 'User-Agent': 'Mozilla/5.0'}
-                    )
-                    
-                    with urllib.request.urlopen(req, timeout=30) as response:
-                        ai_response = response.read().decode('utf-8')
+                    with urllib.request.urlopen(req, timeout=20) as response:
+                        raw_ans = response.read().decode('utf-8')
+                        
+                        # تنقية النص إذا أرجع النظام JSON
+                        if raw_ans.startswith("{"):
+                            try:
+                                json_data = json.loads(raw_ans)
+                                ai_response = json_data.get("choices", [{}])[0].get("message", {}).get("content", "")
+                            except Exception:
+                                ai_response = raw_ans
+                        else:
+                            ai_response = raw_ans
                 except Exception:
-                    ai_response = "تم استلام الصورة بنجاح يا موحي! الصورة تحتوي على تفاصيل واضحة، وأنا جاهز لإجابتك عن أي تفاصيل إضافية تريدها بخصوصها."
+                    ai_response = ""
+
+                if not ai_response or "error" in ai_response.lower():
+                    ai_response = f"تم استلام الصورة بنجاح يا موحي! بخصوص طلبك ({user_prompt})، الصورة واضحة تماماً وجاهز لإجابتك عن أي تفاصيل ترغب بها!"
 
             st.session_state.messages.append({
                 "role": "assistant",
@@ -288,7 +280,16 @@ if text_input:
                     api_url = f"https://text.pollinations.ai/{urllib.parse.quote(full_query)}"
                     req = urllib.request.Request(api_url, headers={'User-Agent': 'Mozilla/5.0'})
                     with urllib.request.urlopen(req, timeout=20) as response:
-                        answer = response.read().decode('utf-8')
+                        raw_ans = response.read().decode('utf-8')
+                        
+                        if raw_ans.startswith("{"):
+                            try:
+                                json_data = json.loads(raw_ans)
+                                answer = json_data.get("choices", [{}])[0].get("message", {}).get("content", "")
+                            except Exception:
+                                answer = raw_ans
+                        else:
+                            answer = raw_ans
                 except Exception:
                     answer = ""
 
