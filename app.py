@@ -4,7 +4,6 @@ import pytz
 import json
 import requests
 import streamlit as st
-import base64
 import re
 
 # --- 1. إعدادات الصفحة ---
@@ -21,7 +20,7 @@ with st.sidebar:
     
     st.write("---")
     st.header("💾 إدارة المحادثات")
-    chat_title_input = st.text_input("عنوان المحادثة:", placeholder="مثال: تحليل لاعب أو مشروع برمجيات")
+    chat_title_input = st.text_input("عنوان المحادثة:", placeholder="مثال: أفكار برمجية، تحليلات رياضية...")
     if st.button("💾 حفظ المحادثة الحالية"):
         if st.session_state.get("messages"):
             title = chat_title_input.strip() if chat_title_input.strip() else f"محادثة {datetime.datetime.now().strftime('%H:%M')}"
@@ -47,7 +46,7 @@ with st.sidebar:
         st.session_state.messages = []
         st.rerun()
 
-# --- 3. تصميم الواجهة الأنيق باللونين الأحمر والأصفر ---
+# --- 3. تصميم الواجهة باللونين الأحمر والأصفر ---
 st.markdown("""
     <style>
     .main { direction: rtl; text-align: right; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
@@ -113,27 +112,6 @@ if "messages" not in st.session_state:
 if "saved_chats" not in st.session_state:
     st.session_state.saved_chats = {}
 
-def clean_json_response(raw_text):
-    if not raw_text:
-        return ""
-    try:
-        if raw_text.strip().startswith("{") or raw_text.strip().startswith("["):
-            parsed = json.loads(raw_text)
-            if isinstance(parsed, dict):
-                if "choices" in parsed and len(parsed["choices"]) > 0:
-                    msg = parsed["choices"][0].get("message", {})
-                    content = msg.get("content", "")
-                    if content:
-                        return content
-                elif "content" in parsed:
-                    return parsed["content"]
-    except Exception:
-        pass
-    
-    cleaned = re.sub(r'\{"id".*?"content":"', '', raw_text, flags=re.DOTALL)
-    cleaned = re.sub(r'","reasoning":.*$', '', cleaned, flags=re.DOTALL)
-    return cleaned.strip()
-
 def clean_text_for_speech(text):
     clean = re.sub(r'[*#_`~()\[\]{}]', '', text)
     clean = re.sub(r'[^\w\s\u0600-\u06FF,.\?!-]', '', clean)
@@ -144,12 +122,6 @@ for idx, msg in enumerate(st.session_state.messages):
     with st.chat_message(msg["role"]):
         if msg.get("content"):
             st.markdown(msg["content"])
-            
-        if msg.get("img_bytes"):
-            try:
-                st.image(msg["img_bytes"], use_container_width=True)
-            except Exception:
-                pass
 
         if msg["role"] == "assistant":
             speech_ready_text = clean_text_for_speech(msg.get("content", ""))
@@ -184,74 +156,7 @@ for idx, msg in enumerate(st.session_state.messages):
             """
             st.components.v1.html(voice_script, height=50)
 
-# --- 5. قسم رفع الصورة وتحليلها ذكياً بدون إجابات مخزنة أو نصوص ثابتة ---
-st.write("---")
-with st.expander("📸 **رفع صورة وتحليلها بالذكاء الاصطناعي الشامل**", expanded=False):
-    uploaded_img = st.file_uploader("اختر صورة من جهازك:", type=["png", "jpg", "jpeg"])
-    img_caption = st.text_input("💬 اكتب طلبك أو سؤالك حول الصورة هنا:", placeholder="مثال: من هذا الشخص؟ أو اشرح لي التفاصيل...")
-
-    if st.button("🚀 تحليل الصورة وإرسال الطلب"):
-        if uploaded_img is not None:
-            bytes_data = uploaded_img.getvalue()
-            user_prompt = img_caption.strip() if img_caption.strip() else "من في هذه الصورة وما هي تفاصيلها بالتفصيل؟"
-            
-            st.session_state.messages.append({
-                "role": "user",
-                "content": f"📷 [طلب حول صورة]: {user_prompt}",
-                "img_bytes": bytes_data
-            })
-            
-            with st.spinner("جاري قراءة الصورة وتحديد محتواها الدقيق بالذكاء الاصطناعي..."):
-                base64_image = base64.b64encode(bytes_data).decode('utf-8')
-                mime_type = uploaded_img.type if uploaded_img.type else "image/jpeg"
-                ai_response = ""
-
-                # إرسال الصورة لنموذج الرؤية عبر خوادم متعددة وقراءة حقيقية
-                endpoints = [
-                    "https://openrouter.ai/api/v1/chat/completions",
-                    "https://text.pollinations.ai/openai"
-                ]
-
-                for ep in endpoints:
-                    try:
-                        payload = {
-                            "model": "meta-llama/llama-3.2-11b-vision-instruct:free",
-                            "messages": [
-                                {
-                                    "role": "system",
-                                    "content": "أنت Moha AI، نموذج رؤية اصطناعي دقيق طورك محمد علاء بن زايد. قم بالتعرف بدقة على الشخص أو الصورة المرفقة واكتب إجابة مفصلة باللغة العربية بأسلوب نقي وبدون أخطاء."
-                                },
-                                {
-                                    "role": "user",
-                                    "content": [
-                                        {"type": "text", "text": user_prompt},
-                                        {"type": "image_url", "image_url": {"url": f"data:{mime_type};base64,{base64_image}"}}
-                                    ]
-                                }
-                            ]
-                        }
-                        res = requests.post(ep, json=payload, timeout=25)
-                        if res.status_code == 200:
-                            cleaned = clean_json_response(res.text)
-                            if cleaned and len(cleaned) > 10 and "reasoning" not in cleaned:
-                                ai_response = cleaned
-                                break
-                    except Exception:
-                        continue
-
-                # إذا لم يستجب النموذج الخارجي، نرجع إجابة واضحة دون أي نص قديم ثابت
-                if not ai_response:
-                    ai_response = f"تم استلام صورة ({uploaded_img.name}) بنجاح يا موحي! جاري معالجة التعرف البصري المباشر، يمكنك كتابة تفاصيل إضافية تريد معرفتها عنها."
-
-            st.session_state.messages.append({
-                "role": "assistant",
-                "content": ai_response
-            })
-            st.rerun()
-        else:
-            st.warning("يرجى اختيار صورة أولاً يا أسطورة!")
-
-# --- 6. المحرك النصي العملاق ---
+# --- 5. المحرك النصي المباشر والشامل ---
 text_input = st.chat_input("اكتب سؤالك في أي مجال (برمجة، رياضة، علوم، تاريخ...)...")
 
 if text_input:
@@ -262,7 +167,7 @@ if text_input:
         st.markdown(prompt_text)
 
     with st.chat_message("assistant"):
-        with st.spinner("جاري استحضار الإجابة بالذكاء الاصطناعي..."):
+        with st.spinner("جاري معالجة الإجابة بالذكاء الاصطناعي..."):
             q_lower = prompt_text.lower()
             answer = ""
             
@@ -296,7 +201,7 @@ if text_input:
                     req_url = f"https://text.pollinations.ai/{requests.utils.quote(full_p)}"
                     r = requests.get(req_url, timeout=20)
                     if r.status_code == 200:
-                        answer = clean_json_response(r.text)
+                        answer = r.text.strip()
                 except Exception:
                     answer = ""
 
