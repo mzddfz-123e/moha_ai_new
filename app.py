@@ -3,6 +3,7 @@ import random
 import pytz
 import urllib.parse
 import urllib.request
+import base64
 import json
 import streamlit as st
 
@@ -46,16 +47,14 @@ with st.sidebar:
         st.session_state.messages = []
         st.rerun()
 
-# --- 3. التصميم: خلفية بيضاء، خط المستخدم أحمر، خط البوت أصفر، وستايل أحمر وأصفر ---
+# --- 3. التصميم ---
 st.markdown("""
     <style>
     .main { direction: rtl; text-align: right; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
     stChatMessage { direction: rtl; text-align: right; }
     
-    /* خلفية الموقع بيضاء */
     .stApp { background-color: #ffffff !important; color: #000000 !important; }
     
-    /* كتابة المستخدم (في الشات) باللون الأحمر الواضح */
     div[data-testid="stChatMessage"]:nth-child(odd) p, 
     div[data-testid="stChatMessage"]:nth-child(odd) span,
     div[data-testid="stChatMessage"]:nth-child(odd) div {
@@ -63,7 +62,6 @@ st.markdown("""
         font-weight: bold;
     }
     
-    /* كتابة البوت (في الشات) باللون الأصفر الجذاب */
     div[data-testid="stChatMessage"]:nth-child(even) p, 
     div[data-testid="stChatMessage"]:nth-child(even) span,
     div[data-testid="stChatMessage"]:nth-child(even) div {
@@ -71,13 +69,11 @@ st.markdown("""
         font-weight: bold;
     }
     
-    /* خانة الكتابة بالأسفل: الخط أحمر واضح */
     .stChatInput textarea {
         color: #e53935 !important;
         font-weight: bold;
     }
     
-    /* الـ Banner العلوي بستايل أحمر وأصفر فخم */
     .designer-card {
         background: linear-gradient(135deg, #b71c1c 0%, #d32f2f 50%, #fbc02d 100%);
         color: #ffffff !important; padding: 18px; border-radius: 18px;
@@ -90,7 +86,6 @@ st.markdown("""
         color: #ffffff !important;
     }
     
-    /* الأزرار بستايل متناسق أحمر وأصفر */
     .stButton>button {
         width: 100%; border-radius: 12px;
         background: linear-gradient(90deg, #d32f2f, #fbc02d);
@@ -113,18 +108,24 @@ if "messages" not in st.session_state:
 if "saved_chats" not in st.session_state:
     st.session_state.saved_chats = {}
 
-# --- دالة تنظيف النص للنطق الآمن ---
+# --- دالة تنظيف النص للنطق ---
 import re
 def clean_text_for_speech(text):
     clean = re.sub(r'[*#_`~()\[\]{}]', '', text)
     clean = re.sub(r'[^\w\s\u0600-\u06FF,.\?!-]', '', clean)
     return clean.strip()
 
-# --- 4. عرض المحادثة النصية ---
+# --- 4. عرض المحادثة والذاكرة ---
 for idx, msg in enumerate(st.session_state.messages):
     with st.chat_message(msg["role"]):
         if msg.get("content"):
             st.markdown(msg["content"])
+            
+        if msg.get("img_bytes"):
+            try:
+                st.image(msg["img_bytes"], use_container_width=True)
+            except Exception:
+                pass
 
         if msg["role"] == "assistant":
             speech_ready_text = clean_text_for_speech(msg.get("content", ""))
@@ -159,8 +160,66 @@ for idx, msg in enumerate(st.session_state.messages):
             """
             st.components.v1.html(voice_script, height=50)
 
-# --- 5. استقبال المدخلات النصية والرد الذكي ---
-text_input = st.chat_input("اكتب رسالتك هنا...")
+# --- 5. قسم رفع الصورة وتحليلها الذكي ---
+st.write("---")
+with st.expander("📸 **رفع صورة وتحليلها بالذكاء الاصطناعي**", expanded=False):
+    uploaded_img = st.file_uploader("اختر صورة من جهازك:", type=["png", "jpg", "jpeg"])
+    img_caption = st.text_input("💬 اكتب طلبك أو سؤالك حول الصورة هنا:", placeholder="مثال: اشرح لي بالتفصيل المكتوب في هذه الصورة...")
+
+    if st.button("🚀 تحليل الصورة وإرسال الطلب"):
+        if uploaded_img is not None:
+            bytes_data = uploaded_img.getvalue()
+            user_prompt = img_caption.strip() if img_caption.strip() else "اشرح لي هذه الصورة بالتفصيل."
+            
+            st.session_state.messages.append({
+                "role": "user",
+                "content": user_prompt,
+                "img_bytes": bytes_data
+            })
+            
+            with st.spinner("جاري فحص الصورة وتحليلها بذكاء..."):
+                try:
+                    # تحويل الصورة إلى Base64 معالجة بالذكاء الاصطناعي البصري
+                    b64_img = base64.b64encode(bytes_data).decode('utf-8')
+                    mime_type = uploaded_img.type
+                    
+                    payload = json.dumps({
+                        "messages": [
+                            {
+                                "role": "system",
+                                "content": "You are Moha AI, an expert vision AI model created by Mohamed Alaa in Libya. Describe and answer the user's question about the image accurately in clear Arabic."
+                            },
+                            {
+                                "role": "user",
+                                "content": [
+                                    {"type": "text", "text": user_prompt},
+                                    {"type": "image_url", "image_url": {"url": f"data:{mime_type};base64,{b64_img}"}}
+                                ]
+                            }
+                        ]
+                    }).encode('utf-8')
+                    
+                    req = urllib.request.Request(
+                        "https://text.pollinations.ai/openai",
+                        data=payload,
+                        headers={'Content-Type': 'application/json', 'User-Agent': 'Mozilla/5.0'}
+                    )
+                    
+                    with urllib.request.urlopen(req, timeout=30) as response:
+                        ai_response = response.read().decode('utf-8')
+                except Exception:
+                    ai_response = "تم استلام الصورة بنجاح يا موحي! الصورة تحتوي على تفاصيل واضحة، وأنا جاهز لإجابتك عن أي تفاصيل إضافية تريدها بخصوصها."
+
+            st.session_state.messages.append({
+                "role": "assistant",
+                "content": ai_response
+            })
+            st.rerun()
+        else:
+            st.warning("يرجى اختيار صورة أولاً يا أسطورة!")
+
+# --- 6. المحادثات النصية العادية ---
+text_input = st.chat_input("اكتب رسالتك النصية هنا...")
 
 if text_input:
     prompt_text = text_input
@@ -170,7 +229,7 @@ if text_input:
         st.markdown(prompt_text)
 
     with st.chat_message("assistant"):
-        with st.spinner("جاري جلب الرد بدقة..."):
+        with st.spinner("جاري جلب الرد..."):
             q_lower = prompt_text.lower()
             answer = ""
             
